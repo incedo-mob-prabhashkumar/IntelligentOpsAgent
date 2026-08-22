@@ -1,0 +1,38 @@
+---
+references:
+  - "File: /src/agent_graph.py"
+generationTime: 2026-08-22T16:00:09.089Z
+---
+flowchart TD
+    START_NODE(["START"]) --> CAPTURE["capture_context()"]
+    CAPTURE --> DECIDE{"decide_intent()"}
+
+    DECIDE -->|knowledge_search| KB["knowledge_search_node()"]
+    DECIDE -->|employee_lookup| EMP["employee_lookup_node()"]
+    DECIDE -->|system_status| SYS["system_status_node()"]
+    DECIDE -->|ticket_lookup| TLV["ticket_lookup_validate()"]
+    DECIDE -->|ticket_update| TUV["ticket_update_validate()"]
+    DECIDE -->|ticket_creation| TCV["ticket_create_validate()"]
+    DECIDE -->|small_talk| SMALL["small_talk_node()"]
+
+    KB --> RESP["compose_response()"]
+    EMP --> RESP
+    SYS --> RESP
+    SMALL --> RESP
+
+    TLV --> LTDEC{"lookup_ready?"}
+    LTDEC -->|Yes| TLOOK["ticket_lookup_node()"]
+    LTDEC -->|No| RESP
+    TLOOK --> RESP
+
+    TCV --> CTDEC{"create_ready?"}
+    CTDEC -->|Yes| TCREATE["ticket_create_node()"]
+    CTDEC -->|No| RESP
+    TCREATE --> RESP
+
+    TUV --> UDDEC{"updated summary and ticket valid?"}
+    UDDEC -->|Yes| TUPDATE["ticket_update_node()"]
+    UDDEC -->|No| RESP
+    TUPDATE --> RESP
+
+    RESP --> END_NODE(["END"])

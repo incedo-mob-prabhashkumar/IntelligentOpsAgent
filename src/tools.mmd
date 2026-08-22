@@ -1,0 +1,38 @@
+---
+references:
+  - "File: /src/tools.py"
+generationTime: 2026-08-22T15:52:29.621Z
+---
+flowchart TD
+    A["LocalITTools class"] --> S[("SQLAlchemy session factory")]
+    S --> C{"Which method?"}
+
+    C -->|Knowledge search| K1["search_knowledge()"]
+    K1 --> K2{"Semantic ranking available?"}
+    K2 -->|Yes| K3["Encode query and articles"]
+    K3 --> K4{"Any score >= 0.35?"}
+    K4 -->|Yes| K5["Return semantic matches"]
+    K4 -->|No| K6["Lexical fallback with token overlap"]
+    K2 -->|No| K6
+    K6 --> K7["Return lexical fallback matches"]
+
+    C -->|Duplicate check| D1["find_duplicate_ticket()"]
+    D1 --> D2["Query recent open / in_progress tickets"]
+    D2 --> D3["Loop through candidate tickets"]
+    D3 --> D4{"Overlap >= 2 and similarity >= 0.34?"}
+    D4 -->|Yes| D5["Return duplicate payload"]
+    D4 -->|No| D3
+
+    C -->|Write ticket| T1["create_ticket() / update_ticket_summary()"]
+    T1 --> T2{"Ticket found or next ID generated?"}
+    T2 -->|No| T3["Return not_found / failure"]
+    T2 -->|Yes| T4["Begin transaction and persist changes"]
+    T4 --> T5{"SQLAlchemyError?"}
+    T5 -->|Yes| T3
+    T5 -->|No| T6["Return success payload"]
+
+    C -->|Read data| R1["employee_exists / lookup_employee_by_id / list_* / get_system_status"]
+    R1 --> R2{"SQLAlchemyError?"}
+    R2 -->|Yes| R3["Return empty result or error payload"]
+    R2 -->|No| R4["Map ORM rows to dicts"]
+    R4 --> R5["Return data"]
