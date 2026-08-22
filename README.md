@@ -303,7 +303,7 @@ The tests cover:
 
 ## Limitations
 - Intent routing uses a lightweight classifier prompt and can be improved with richer evaluation.
-- Knowledge search is lexical SQL matching (not embedding/vector search).
+- Knowledge search uses local semantic retrieval with lexical fallback; retrieval quality can still be improved with stronger domain-tuned embeddings and evaluation.
 - Authentication/authorization is not implemented (local demo scope).
 - Concurrent ticket ID generation is basic for local-demo usage.
 - This project assumes local Ollama and PostgreSQL are already installed and reachable.
@@ -317,3 +317,56 @@ The tests cover:
 
 ## Security Note
 Do not commit real credentials, API keys, or production connection strings.
+
+## HTML Documentation
+A consolidated HTML version of the project documentation is available at:
+- `docs/project-docs.html`
+
+It includes key information from both README and ARCHITECTURE documents, along with renderable Mermaid diagrams for evaluator-friendly review.
+
+## Evaluator Quick Instructions
+Use this section to validate the project quickly on a fresh machine.
+
+1. Clone the repository and open it in VS Code.
+2. Create and activate a virtual environment:
+   ```powershell
+   python -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+   ```
+3. Install dependencies:
+   ```powershell
+   python -m pip install --upgrade pip
+   python -m pip install -r requirements.txt
+   ```
+4. Ensure PostgreSQL is running and create database `it_support`.
+5. Initialize seed data:
+   ```bash
+   psql -U postgres -d it_support -f db/init.sql
+   ```
+6. Start Ollama and pull model:
+   ```bash
+   ollama pull gemma4:latest
+   ```
+7. Configure environment file:
+   - Copy `.env.example` to `.env`
+   - Set `POSTGRES_DSN`, and confirm `OLLAMA_BASE_URL` and `OLLAMA_MODEL`
+8. Run unit tests:
+   ```bash
+   python -m unittest discover -s tests -v
+   ```
+9. Start the app:
+   ```powershell
+   streamlit run app.py
+   ```
+10. Open `http://localhost:8501` and validate the following scenarios:
+   - Knowledge query: `How do I reset my VPN password?`
+   - Ticket lookup: `What is the status of my laptop issue? EMP1024`
+   - Ticket creation flow: `My VPN is not working. Please raise a ticket. EMP3001`
+   - Duplicate prevention: repeat a similar open issue and confirm the assistant warns instead of creating a duplicate.
+
+Expected evaluator outcomes:
+- The app starts without schema errors.
+- Existing sample records are available immediately (employees, KB, tickets, system status).
+- Intent routing selects the appropriate workflow.
+- Missing information prompts are clear and safe.
+- Ticket creation and update paths apply validation before writes.

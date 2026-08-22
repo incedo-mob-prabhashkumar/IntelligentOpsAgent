@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI IT Support Assistant - Project Documentation</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #4b5563;
+      --accent: #0f766e;
+      --border: #dbe2ea;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(140deg, #eef2ff 0%, #f5f7fb 45%, #f0fdf4 100%);
+      color: var(--text);
+      line-height: 1.55;
+    }
+
+    header {
+      padding: 28px 20px;
+      border-bottom: 1px solid var(--border);
+      background: #ffffffcc;
+      backdrop-filter: blur(4px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      color: #0b3b63;
+    }
+
+    header p {
+      margin: 6px 0 0;
+      color: var(--muted);
+    }
+
+    main {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+    }
+
+    h2 {
+      margin-top: 0;
+      color: #0b3b63;
+    }
+
+    h3 {
+      color: #0f766e;
+    }
+
+    ul {
+      margin-top: 6px;
+    }
+
+    code {
+      background: #f3f4f6;
+      padding: 2px 5px;
+      border-radius: 4px;
+      border: 1px solid #e5e7eb;
+    }
+
+    pre {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 12px;
+      border-radius: 8px;
+      overflow: auto;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>AI IT Support Assistant Documentation</h1>
+    <p>Consolidated evaluator-focused view of README and ARCHITECTURE content.</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Project Title</h2>
+      <p>AI IT Support Assistant (LangGraph + Streamlit + PostgreSQL + Ollama)</p>
+
+      <h2>Problem Statement</h2>
+      <p>Employees need fast help for common IT issues such as VPN access, ticket status, and new support ticket creation. The assistant must route intent, validate inputs, prevent duplicates, and provide clear responses.</p>
+
+      <h2>Solution Overview</h2>
+      <ul>
+        <li>Stateful LangGraph orchestration with conditional routing.</li>
+        <li>Streamlit chat interface with business table output.</li>
+        <li>PostgreSQL-backed tools for knowledge, employee, ticket, and status operations.</li>
+        <li>Intent classification with local Ollama model and deterministic safeguards.</li>
+        <li>SentenceTransformer-based semantic retrieval with lexical fallback.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Architecture Flow Diagram</h2>
+      <div class="mermaid">
+flowchart TD
+    U[User Message in Streamlit] --> A[app.py]
+    A --> S[ITSupportAgent.handle_message]
+    S --> G[LangGraph Compiled Workflow]
+
+    G --> C[Capture Context Node]
+    C --> D[Intent Decision Node]
+
+    D -->|knowledge_search| K[Knowledge Tool]
+    D -->|employee_lookup| E[Employee Tool]
+    D -->|ticket_lookup| V1[Lookup Validation]
+    D -->|ticket_creation| V2[Creation Validation]
+    D -->|ticket_update| V3[Update Validation]
+    D -->|system_status| SS[System Status Tool]
+    D -->|small_talk| R[Response Node]
+
+    V1 -->|valid| TL[Ticket Lookup Tool]
+    V1 -->|missing or invalid fields| R
+
+    V2 -->|employee valid and no duplicate| TC[Ticket Creation Tool]
+    V2 -->|missing fields or duplicate| R
+
+    V3 -->|ticket exists| TU[Ticket Update Tool]
+    V3 -->|ticket missing or invalid| R
+
+    K --> DB1[(knowledge_base)]
+    E --> DB2[(employees)]
+    TL --> DB3[(tickets)]
+    TC --> DB3
+    TU --> DB3
+    SS --> DB4[(system_status)]
+
+    DB1 --> R
+    DB2 --> R
+    DB3 --> R
+    DB4 --> R
+
+    R --> L[Grounded Response Generator]
+    L --> A2[Assistant Text + Table Output]
+      </div>
+    </section>
+
+    <section class="card grid">
+      <div>
+        <h3>Technology Stack</h3>
+        <ul>
+          <li>Python 3.10+</li>
+          <li>LangGraph, LangChain, langchain-ollama</li>
+          <li>Streamlit</li>
+          <li>PostgreSQL + SQLAlchemy + psycopg</li>
+          <li>sentence-transformers</li>
+          <li>unittest</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Project Structure</h3>
+        <pre>capstone/
+  app.py
+  README.md
+  ARCHITECTURE.md
+  db/init.sql
+  data/*.json
+  src/*.py
+  tests/test_agent_graph.py</pre>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Setup Instructions</h2>
+      <ol>
+        <li>Create venv and install dependencies.</li>
+        <li>Run PostgreSQL and create <code>it_support</code> database.</li>
+        <li>Load sample data using <code>db/init.sql</code>.</li>
+        <li>Run Ollama and pull <code>gemma4:latest</code>.</li>
+        <li>Create <code>.env</code> from <code>.env.example</code>.</li>
+      </ol>
+      <pre>python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+psql -U postgres -d it_support -f db/init.sql
+ollama pull gemma4:latest
+streamlit run app.py</pre>
+    </section>
+
+    <section class="card">
+      <h2>Environment Variables</h2>
+      <ul>
+        <li><code>OLLAMA_BASE_URL</code> (default <code>http://localhost:11434</code>)</li>
+        <li><code>OLLAMA_MODEL</code> (default <code>gemma4:latest</code>)</li>
+        <li><code>POSTGRES_DSN</code> (example <code>postgresql://postgres:postgres@localhost:5432/it_support</code>)</li>
+        <li><code>SHOW_TRACE</code> (optional, <code>true</code> to show trace)</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Sample Inputs and Outputs</h2>
+      <p><strong>Input:</strong> How do I reset my VPN password?</p>
+      <p><strong>Output:</strong> KB-guided response with article reference (for example KB-001).</p>
+      <p><strong>Input:</strong> What is the status of my laptop issue? EMP1024</p>
+      <p><strong>Output:</strong> Latest ticket status with structured table output.</p>
+      <p><strong>Input:</strong> My VPN is not working. Please raise a ticket. EMP3001</p>
+      <p><strong>Output:</strong> Ticket creation confirmation with generated ticket ID.</p>
+    </section>
+
+    <section class="card">
+      <h2>Additional Diagrams</h2>
+      <h3>Conversation State Diagram</h3>
+      <div class="mermaid">
+stateDiagram-v2
+    [*] --> AwaitingUserMessage
+    AwaitingUserMessage --> CaptureContext: message received
+    CaptureContext --> DecideIntent
+
+    DecideIntent --> KnowledgeSearch: knowledge_search
+    DecideIntent --> EmployeeLookup: employee_lookup
+    DecideIntent --> TicketLookupValidation: ticket_lookup
+    DecideIntent --> TicketCreationValidation: ticket_creation
+    DecideIntent --> TicketUpdateValidation: ticket_update
+    DecideIntent --> SystemStatus: system_status
+    DecideIntent --> SmallTalk: small_talk
+
+    KnowledgeSearch --> ComposeResponse
+    EmployeeLookup --> ComposeResponse
+    SystemStatus --> ComposeResponse
+    SmallTalk --> ComposeResponse
+
+    TicketLookupValidation --> ComposeResponse: missing fields
+    TicketLookupValidation --> TicketLookup: valid
+    TicketLookup --> ComposeResponse
+
+    TicketCreationValidation --> ComposeResponse: missing fields or duplicate
+    TicketCreationValidation --> TicketCreation: valid
+    TicketCreation --> ComposeResponse
+
+    TicketUpdateValidation --> ComposeResponse: invalid ticket
+    TicketUpdateValidation --> TicketUpdate: valid
+    TicketUpdate --> ComposeResponse
+
+    ComposeResponse --> AwaitingUserMessage
+      </div>
+
+      <h3>Data Model ER Diagram</h3>
+      <div class="mermaid">
+erDiagram
+    EMPLOYEES ||--o{ TICKETS : owns
+
+    EMPLOYEES {
+        string employee_id PK
+        string name
+        string department
+        string email
+        string location
+    }
+
+    TICKETS {
+        string ticket_id PK
+        string employee_id FK
+        string summary
+        string category
+        string priority
+        string status
+        datetime created_at
+        datetime updated_at
+        string[] notes
+    }
+
+    KNOWLEDGE_BASE {
+        string article_id PK
+        string title
+        string[] tags
+        string content
+        date last_updated
+    }
+
+    SYSTEM_STATUS {
+        string service PK
+        string status
+        datetime updated_at
+    }
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Key Design Decisions</h2>
+      <ul>
+        <li>Rule-first routing plus LLM fallback for robustness.</li>
+        <li>Stateful workflow via employee and pending intent memory.</li>
+        <li>Validation gates before all write actions.</li>
+        <li>Grounded responses tied to tool output.</li>
+      </ul>
+
+      <h2>Limitations</h2>
+      <ul>
+        <li>Intent classifier can be improved with richer evaluation.</li>
+        <li>Authentication and authorization are out of local demo scope.</li>
+        <li>Ticket ID generation is basic for local usage.</li>
+      </ul>
+
+      <p class="muted">For full details, see README.md and ARCHITECTURE.md in the repository root.</p>
+    </section>
+  </main>
+
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+  </script>
+</body>
+</html>

@@ -36,6 +36,49 @@ ORM models are defined in src/models.py. Startup schema initialization and data 
 5. llm_router.py enhances final response phrasing using grounded tool output.
 6. app.py renders final message and structured table from tool trace.
 
+### 4.1) Application Flow Diagram
+```mermaid
+flowchart TD
+	U[User Message in Streamlit] --> A[app.py]
+	A --> S[ITSupportAgent.handle_message]
+	S --> G[LangGraph Compiled Workflow]
+
+	G --> C[Capture Context Node]
+	C --> D[Intent Decision Node]
+
+	D -->|knowledge_search| K[Knowledge Tool]
+	D -->|employee_lookup| E[Employee Tool]
+	D -->|ticket_lookup| V1[Lookup Validation]
+	D -->|ticket_creation| V2[Creation Validation]
+	D -->|ticket_update| V3[Update Validation]
+	D -->|system_status| SS[System Status Tool]
+	D -->|small_talk| R[Response Node]
+
+	V1 -->|valid| TL[Ticket Lookup Tool]
+	V1 -->|missing or invalid fields| R
+
+	V2 -->|employee valid and no duplicate| TC[Ticket Creation Tool]
+	V2 -->|missing fields or duplicate| R
+
+	V3 -->|ticket exists| TU[Ticket Update Tool]
+	V3 -->|ticket missing or invalid| R
+
+	K --> DB1[(knowledge_base)]
+	E --> DB2[(employees)]
+	TL --> DB3[(tickets)]
+	TC --> DB3
+	TU --> DB3
+	SS --> DB4[(system_status)]
+
+	DB1 --> R
+	DB2 --> R
+	DB3 --> R
+	DB4 --> R
+
+	R --> L[Grounded Response Generator]
+	L --> A2[Assistant Text + Table Output]
+```
+
 ## 5) LangGraph Design
 State object (src/state.py) carries:
 - user_input, intent
@@ -99,6 +142,21 @@ Tool layer in src/tools.py provides:
 - Ticket summary update.
 - System status retrieval.
 
+### 9.1) SentenceTransformer Usage
+The knowledge retrieval path uses SentenceTransformer embeddings to improve matching quality for natural-language queries.
+
+How it is used:
+1. User query text is converted into an embedding vector.
+2. Candidate knowledge articles are converted into embedding vectors.
+3. Cosine similarity is calculated between query and article vectors.
+4. Top-ranked articles are returned as semantic matches.
+5. If embedding retrieval is unavailable or low-confidence, the tool falls back to lexical matching.
+
+Why this matters:
+- Handles paraphrased queries better than strict keyword matching.
+- Improves relevance when users describe issues in different wording.
+- Preserves reliability with deterministic lexical fallback.
+
 Each tool returns structured payloads for:
 - Business rendering (chat table)
 - Safe downstream response generation
@@ -134,3 +192,195 @@ Recommended future extensions:
 - Role-based access controls.
 - Alembic migrations for schema evolution.
 - Additional ticket lifecycle actions (close/reopen/assign).
+
+## 14) Input and Output Examples
+The following examples reflect expected behavior for evaluator testing.
+
+### Example A: Knowledge Search
+Input:
+- User: How do I reset my VPN password?
+
+Flow:
+- Intent: knowledge_search
+- Tool: Knowledge retrieval (SentenceTransformer semantic ranking + lexical fallback)
+
+Output:
+- Assistant response summarizing the steps.
+- Structured result with article reference, for example article_id KB-001.
+
+### Example B: Ticket Lookup by Employee
+Input:
+- User: What is the status of my laptop issue? EMP1024
+
+Flow:
+- Intent: ticket_lookup
+- Validation: employee_id present
+- Tool: ticket lookup by employee
+
+Output:
+- Assistant response with latest matching ticket status.
+- Structured result containing ticket_id, summary, status, priority, and timestamps.
+
+### Example C: Stateful Ticket Creation
+Input sequence:
+- User: My VPN is not working. Please raise a ticket.
+- Agent: asks for employee ID
+- User: EMP3001
+
+Flow:
+- Intent: ticket_creation
+- Validation: employee exists
+- Duplicate check: recent open tickets
+- Tool: ticket creation when validations pass
+
+Output:
+- Assistant response confirming ticket creation.
+- Structured result including generated ticket_id, employee_id, summary, and status.
+
+### Example D: Ticket Update
+Input:
+- User: Update TKT1001 summary to VPN disconnects during video meetings.
+
+Flow:
+- Intent: ticket_update
+- Validation: ticket exists
+- Tool: ticket update
+
+Output:
+- Assistant response confirming update.
+- Structured result including ticket_id, updated summary, and updated_at.
+
+### Example E: Missing Information Path
+Input:
+- User: Check my ticket status.
+
+Flow:
+- Intent: ticket_lookup
+- Validation fails due to missing employee_id or ticket_id
+
+Output:
+- Assistant asks for required identifier.
+- No database write performed.
+
+## 15) Additional Architecture Diagrams
+
+### 15.1) Request Lifecycle Sequence Diagram
+```mermaid
+sequenceDiagram
+	participant User
+	participant UI as Streamlit UI (app.py)
+	participant Service as ITSupportAgent (service.py)
+	participant Graph as LangGraph Workflow
+	participant Tools as Tool Layer (tools.py)
+	participant DB as PostgreSQL
+	participant LLM as Response Generator
+
+	User->>UI: Send message
+	UI->>Service: handle_message(message, context)
+	Service->>Graph: invoke(state)
+	Graph->>Graph: Capture context + decide intent
+
+	alt knowledge_search
+		Graph->>Tools: search_knowledge(query)
+		Tools->>DB: Read knowledge articles
+		DB-->>Tools: Candidate rows
+		Tools-->>Graph: Ranked matches
+	else ticket_creation
+		Graph->>Tools: validate employee and duplicates
+		Tools->>DB: Read employees and open tickets
+		DB-->>Tools: Validation records
+		Tools-->>Graph: validation result
+		opt validation passes
+			Graph->>Tools: create_ticket(payload)
+			Tools->>DB: Insert ticket
+			DB-->>Tools: Created row
+			Tools-->>Graph: Ticket result
+		end
+	else system_status
+		Graph->>Tools: get_system_status()
+		Tools->>DB: Read status table
+		DB-->>Tools: Status rows
+		Tools-->>Graph: Status result
+	end
+
+	Graph->>LLM: compose grounded response
+	LLM-->>Graph: final text
+	Graph-->>Service: final response + tool result
+	Service-->>UI: payload
+	UI-->>User: Assistant text + table output
+```
+
+### 15.2) Conversation and Validation State Diagram
+```mermaid
+stateDiagram-v2
+	[*] --> AwaitingUserMessage
+	AwaitingUserMessage --> CaptureContext: message received
+	CaptureContext --> DecideIntent
+
+	DecideIntent --> KnowledgeSearch: knowledge_search
+	DecideIntent --> EmployeeLookup: employee_lookup
+	DecideIntent --> TicketLookupValidation: ticket_lookup
+	DecideIntent --> TicketCreationValidation: ticket_creation
+	DecideIntent --> TicketUpdateValidation: ticket_update
+	DecideIntent --> SystemStatus: system_status
+	DecideIntent --> SmallTalk: small_talk
+
+	KnowledgeSearch --> ComposeResponse
+	EmployeeLookup --> ComposeResponse
+	SystemStatus --> ComposeResponse
+	SmallTalk --> ComposeResponse
+
+	TicketLookupValidation --> ComposeResponse: missing fields
+	TicketLookupValidation --> TicketLookup: valid
+	TicketLookup --> ComposeResponse
+
+	TicketCreationValidation --> ComposeResponse: missing fields or duplicate
+	TicketCreationValidation --> TicketCreation: valid
+	TicketCreation --> ComposeResponse
+
+	TicketUpdateValidation --> ComposeResponse: invalid ticket
+	TicketUpdateValidation --> TicketUpdate: valid
+	TicketUpdate --> ComposeResponse
+
+	ComposeResponse --> AwaitingUserMessage
+```
+
+### 15.3) Data Model Relationship Diagram
+```mermaid
+erDiagram
+	EMPLOYEES ||--o{ TICKETS : owns
+
+	EMPLOYEES {
+		string employee_id PK
+		string name
+		string department
+		string email
+		string location
+	}
+
+	TICKETS {
+		string ticket_id PK
+		string employee_id FK
+		string summary
+		string category
+		string priority
+		string status
+		datetime created_at
+		datetime updated_at
+		string[] notes
+	}
+
+	KNOWLEDGE_BASE {
+		string article_id PK
+		string title
+		string[] tags
+		string content
+		date last_updated
+	}
+
+	SYSTEM_STATUS {
+		string service PK
+		string status
+		datetime updated_at
+	}
+```
