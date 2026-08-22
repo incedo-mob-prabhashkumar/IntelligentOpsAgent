@@ -1,0 +1,29 @@
+[
+  {
+    "ticket_id": "TKT1001",
+    "employee_id": "EMP1024",
+    "summary": "VPN disconnects every 10 minutes",
+    "category": "network",
+    "priority": "high",
+    "status": "in_progress",
+    "created_at": "2026-08-15T09:30:00Z",
+    "updated_at": "2026-08-20T11:10:00Z",
+    "notes": [
+      "Initial diagnostics completed",
+      "Awaiting user logs"
+    ]
+  },
+  {
+    "ticket_id": "TKT1002",
+    "employee_id": "EMP2048",
+    "summary": "Outlook mailbox not syncing",
+    "category": "software",
+    "priority": "medium",
+    "status": "open",
+    "created_at": "2026-08-18T12:05:00Z",
+    "updated_at": "2026-08-18T12:05:00Z",
+    "notes": [
+      "Assigned to messaging support queue"
+    ]
+  }
+]

@@ -1,0 +1,30 @@
+[
+  {
+    "article_id": "KB-001",
+    "title": "Reset VPN Password",
+    "tags": ["vpn", "password", "reset", "remote-access"],
+    "content": "Open the Self-Service Portal, choose 'Reset Network Password', complete MFA, and wait 2 minutes before reconnecting VPN.",
+    "last_updated": "2026-05-10"
+  },
+  {
+    "article_id": "KB-002",
+    "title": "Fix Outlook Not Syncing",
+    "tags": ["email", "outlook", "sync"],
+    "content": "Check internet connectivity, restart Outlook, then recreate your profile from Control Panel > Mail if sync issues continue.",
+    "last_updated": "2026-04-22"
+  },
+  {
+    "article_id": "KB-003",
+    "title": "Laptop Battery Health Check",
+    "tags": ["laptop", "battery", "hardware"],
+    "content": "Run the vendor diagnostics app and submit the generated battery report to IT support if health is below 60%.",
+    "last_updated": "2026-06-15"
+  },
+  {
+    "article_id": "KB-004",
+    "title": "Corporate Wi-Fi Troubleshooting",
+    "tags": ["wifi", "network", "connectivity"],
+    "content": "Forget the corporate SSID, reconnect using your company credentials, and verify your device time is set automatically.",
+    "last_updated": "2026-07-01"
+  }
+]

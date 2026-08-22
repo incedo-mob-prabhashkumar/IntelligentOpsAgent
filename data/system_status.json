@@ -1,0 +1,17 @@
+[
+  {
+    "service": "VPN Gateway",
+    "status": "operational",
+    "updated_at": "2026-08-22T08:00:00Z"
+  },
+  {
+    "service": "Email Service",
+    "status": "degraded",
+    "updated_at": "2026-08-22T07:45:00Z"
+  },
+  {
+    "service": "SSO Authentication",
+    "status": "operational",
+    "updated_at": "2026-08-22T08:05:00Z"
+  }
+]

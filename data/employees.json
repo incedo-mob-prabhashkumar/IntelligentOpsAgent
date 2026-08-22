@@ -1,0 +1,23 @@
+[
+  {
+    "employee_id": "EMP1024",
+    "name": "Aarav Mehta",
+    "department": "Finance",
+    "email": "aarav.mehta@example.com",
+    "location": "Bengaluru"
+  },
+  {
+    "employee_id": "EMP2048",
+    "name": "Diya Nair",
+    "department": "Engineering",
+    "email": "diya.nair@example.com",
+    "location": "Pune"
+  },
+  {
+    "employee_id": "EMP3001",
+    "name": "Rohan Iyer",
+    "department": "Sales",
+    "email": "rohan.iyer@example.com",
+    "location": "Mumbai"
+  }
+]
