@@ -21,25 +21,116 @@ This project implements a local Agentic AI IT Support Assistant with:
 ## Architecture Diagram
 ```mermaid
 flowchart TD
-    U[User Query] --> N1[Capture Context Node]
-    N1 --> N2[Intent Decision Node]
-    N2 -->|knowledge_search| K[Knowledge Search Tool]
-   N2 -->|system_status| S[System Status Tool]
-    N2 -->|ticket_lookup| L1[Lookup Validation Node]
-    N2 -->|ticket_creation| C1[Creation Validation Node]
-    N2 -->|small_talk| R[Response Generation Node]
+   subgraph UI[Streamlit UI Layer]
+      U[User Message]
+      H[Chat History]
+      T[Tabular Tool Output]
+   end
 
-    L1 -->|valid| L2[Ticket Lookup Tool]
-    L1 -->|missing/invalid| R
+   subgraph APP[Service + LangGraph Orchestrator]
+      SVC[ITSupportAgent.handle_message]
+      ST[Graph State]
+      C1[Capture Context Node]
+      C2[Intent Decision Node]
+      RSP[Response Composition Node]
+   end
 
-    C1 -->|valid| C2[Ticket Creation Tool]
-    C1 -->|missing/duplicate/invalid| R
+   subgraph MEMORY[State Memory]
+      M1[employee_id]
+      M2[ticket_id]
+      M3[pending_intent]
+      M4[proposed_issue_summary]
+      M5[confirmation_flags]
+   end
 
-    K --> R
-   S --> R
-    L2 --> R
-    C2 --> R
-    R --> A[Final Answer]
+   subgraph ROUTES[Conditional Routing]
+      I1[knowledge_search]
+      I2[employee_lookup]
+      I3[ticket_lookup]
+      I4[ticket_creation]
+      I5[ticket_update]
+      I6[system_status]
+      I7[small_talk]
+   end
+
+   subgraph VALIDATION[Safety and Validation Gates]
+      V1[Employee ID Required]
+      V2[Employee Exists]
+      V3[Duplicate Ticket Check]
+      V4[Ticket Exists for Update]
+      V5[Missing Field Prompt]
+   end
+
+   subgraph TOOLS[Local Tools and Data Access]
+      K[Knowledge Search Tool]
+      E[Employee Lookup Tool]
+      L[Ticket Lookup Tool]
+      CR[Ticket Creation Tool]
+      UP[Ticket Update Tool]
+      SS[System Status Tool]
+   end
+
+   subgraph DATA[PostgreSQL]
+      D1[(employees)]
+      D2[(knowledge_base)]
+      D3[(tickets)]
+      D4[(system_status)]
+   end
+
+   subgraph LLM[LLM Layer]
+      LI[Intent Classifier]
+      LR[Grounded Response Generator]
+   end
+
+   U --> SVC --> ST --> C1 --> C2
+   C1 --> M1
+   C1 --> M2
+   C1 --> M3
+   C1 --> M4
+   C1 --> M5
+
+   C2 --> LI
+   C2 --> I1
+   C2 --> I2
+   C2 --> I3
+   C2 --> I4
+   C2 --> I5
+   C2 --> I6
+   C2 --> I7
+
+   I1 --> K --> D2
+   I2 --> E --> D1
+
+   I3 --> V1
+   V1 -->|has employee_id or ticket_id| V2
+   V1 -->|missing data| V5 --> RSP
+   V2 -->|valid| L --> D3
+   V2 -->|invalid| V5 --> RSP
+
+   I4 --> V1
+   V1 -->|has employee_id| V2
+   V2 -->|valid| V3
+   V3 -->|not duplicate| CR --> D3
+   V3 -->|duplicate detected| V5 --> RSP
+
+   I5 --> V4
+   V4 -->|valid ticket| UP --> D3
+   V4 -->|missing/invalid ticket| V5 --> RSP
+
+   I6 --> SS --> D4
+   I7 --> RSP
+
+   K --> RSP
+   E --> RSP
+   L --> RSP
+   CR --> RSP
+   UP --> RSP
+   SS --> RSP
+
+   RSP --> LR --> H
+   RSP --> T
+   H --> A[Final Assistant Response]
+   T --> A
 ```
 
 ## Technology Stack
