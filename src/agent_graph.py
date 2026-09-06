@@ -46,6 +46,16 @@ def _looks_like_negative(text: str) -> bool:
     return normalized in {"no", "nope", "not now", "skip", "don't", "do not"}
 
 
+def _looks_like_greeting(text: str) -> bool:
+    lowered = text.lower()
+    return any(token in lowered for token in ["hi", "hello", "hey", "good morning", "good afternoon", "good evening"])
+
+
+def _looks_like_thanks(text: str) -> bool:
+    lowered = text.lower()
+    return any(token in lowered for token in ["thanks", "thank you", "thx"])
+
+
 def _looks_like_count_query(text: str) -> bool:
     lowered = text.lower()
     return any(token in lowered for token in ["how many", "count", "number of", "total tickets", "tickets raised"])
@@ -80,6 +90,50 @@ def _looks_like_employee_query(text: str) -> bool:
     return any(token in lowered for token in ["employee details", "employee info", "employee information", "employee profile"])
 
 
+def _looks_like_status_check(text: str) -> bool:
+    lowered = text.lower()
+    return any(
+        token in lowered
+        for token in [
+            "system status",
+            "service status",
+            "status page",
+            "outage",
+            "health",
+            "operational",
+            "is there an issue",
+            "any outage",
+        ]
+    )
+
+
+def _looks_like_ticket_creation_request(text: str) -> bool:
+    lowered = text.lower()
+    return any(token in lowered for token in ["raise", "create", "open", "log a ticket", "new ticket"])
+
+
+def _looks_like_incident_report(text: str) -> bool:
+    lowered = text.lower()
+    return any(
+        token in lowered
+        for token in [
+            "not working",
+            "isn't working",
+            "unable to",
+            "cannot",
+            "can't",
+            "keeps failing",
+            "keeps disconnecting",
+            "broken",
+        ]
+    )
+
+
+def _looks_like_knowledge_request(text: str) -> bool:
+    lowered = text.lower()
+    return any(token in lowered for token in ["how", "reset", "configure", "setup", "install", "steps"])
+
+
 def build_graph(
     tools: "LocalITTools",
     classify_intent: Callable[[str, dict], str],
@@ -104,6 +158,7 @@ def build_graph(
     def decide_intent(state: GraphState) -> GraphState:
         user_input = state.get("user_input", "")
         context = dict(state.get("context", {}))
+        semantic_intent = classify_intent(user_input, context)
         if context.get("awaiting_lookup_confirmation"):
             if _looks_like_affirmation(user_input):
                 intent = "ticket_lookup"
@@ -141,12 +196,42 @@ def build_graph(
             intent = "ticket_lookup"
         else:
             pending_intent = context.get("pending_intent")
-            if pending_intent and (_extract_employee_id(user_input) or _looks_like_affirmation(user_input)):
+            if semantic_intent:
+                intent = semantic_intent
+                # Safety override: incident-like reports should not collapse to small talk.
+                if _looks_like_ticket_creation_request(user_input):
+                    intent = "ticket_creation"
+                if (
+                    intent == "ticket_creation"
+                    and _looks_like_incident_report(user_input)
+                    and not _looks_like_ticket_creation_request(user_input)
+                    and not _looks_like_status_check(user_input)
+                ):
+                    intent = "knowledge_search"
+                if (
+                    intent == "small_talk"
+                    and _looks_like_incident_report(user_input)
+                    and not _looks_like_status_check(user_input)
+                ):
+                    intent = "knowledge_search"
+                if pending_intent and (_extract_employee_id(user_input) or _looks_like_affirmation(user_input)):
+                    intent = pending_intent
+                elif pending_intent and len(user_input.strip()) >= 8:
+                    intent = pending_intent
+            elif pending_intent and (_extract_employee_id(user_input) or _looks_like_affirmation(user_input)):
                 intent = pending_intent
             elif pending_intent and len(user_input.strip()) >= 8:
                 intent = pending_intent
+            elif _looks_like_ticket_creation_request(user_input):
+                intent = "ticket_creation"
+            elif (
+                _looks_like_incident_report(user_input)
+                and not _looks_like_status_check(user_input)
+                and not _looks_like_knowledge_request(user_input)
+            ):
+                intent = "knowledge_search"
             else:
-                intent = classify_intent(user_input, context)
+                intent = "small_talk"
         context["last_intent"] = intent
         if intent == "ticket_lookup":
             context.pop("awaiting_lookup_confirmation", None)
@@ -376,10 +461,31 @@ def build_graph(
         return {"tool_result": {"tool": "ticket_update", "data": result}}
 
     def small_talk_node(state: GraphState) -> GraphState:
+        user_input = state.get("user_input", "")
+        if _looks_like_thanks(user_input):
+            return {
+                "final_response": (
+                    "You are welcome. I can still help with ticket status, IT troubleshooting guidance, "
+                    "or creating a new support ticket whenever you are ready."
+                )
+            }
+
+        if _looks_like_greeting(user_input):
+            return {
+                "final_response": (
+                    "Hello. I am your AI IT support assistant. "
+                    "I can help with knowledge base troubleshooting, ticket lookup by employee or ticket ID, "
+                    "system status checks, and new ticket creation. "
+                    "Try: 'How do I reset VPN password?', 'Check ticket status for EMP1024', "
+                    "or 'Create a ticket for screen issue'."
+                )
+            }
+
         return {
             "final_response": (
-                "I can help with IT support tasks: knowledge lookup, ticket status checks, "
-                "and ticket creation. Tell me what you need."
+                "I can help with IT support tasks including troubleshooting guidance from the knowledge base, "
+                "ticket lookup, system status checks, and ticket creation. "
+                "Please share your issue, employee ID, or ticket ID to get started."
             )
         }
 
@@ -446,6 +552,7 @@ def build_graph(
                     ) if compose_with_llm else fallback_response
                 }
             statuses = data.get("statuses", [])
+            used_fallback = bool(data.get("fallback_to_all"))
             if not statuses:
                 fallback_response = "I could not find any matching system status entries."
                 return {
@@ -456,13 +563,25 @@ def build_graph(
             degraded = [row for row in statuses if str(row.get("status", "")).lower() != "operational"]
             if degraded:
                 names = ", ".join(str(row.get("service")) for row in degraded)
-                fallback_response = "Current system status retrieved. " f"Attention required for: {names}."
+                if used_fallback:
+                    fallback_response = (
+                        "I did not find an exact service match for your query, so I checked overall system status. "
+                        f"Attention required for: {names}."
+                    )
+                else:
+                    fallback_response = "Current system status retrieved. " f"Attention required for: {names}."
                 return {
                     "final_response": compose_with_llm(
                         state.get("user_input", ""), intent or "", state.get("context", {}), tool_result, fallback_response
                     ) if compose_with_llm else fallback_response
                 }
-            fallback_response = "Current system status retrieved. All listed services are operational."
+            if used_fallback:
+                fallback_response = (
+                    "I did not find an exact service match for your query, so I checked overall system status. "
+                    "All listed services are operational."
+                )
+            else:
+                fallback_response = "Current system status retrieved. All listed services are operational."
             return {
                 "final_response": compose_with_llm(
                     state.get("user_input", ""), intent or "", state.get("context", {}), tool_result, fallback_response

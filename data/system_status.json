@@ -13,5 +13,25 @@
     "service": "SSO Authentication",
     "status": "operational",
     "updated_at": "2026-08-22T08:05:00Z"
+  },
+  {
+    "service": "Laptop Hardware Support",
+    "status": "operational",
+    "updated_at": "2026-08-22T08:10:00Z"
+  },
+  {
+    "service": "Collaboration Platform",
+    "status": "degraded",
+    "updated_at": "2026-08-22T08:20:00Z"
+  },
+  {
+    "service": "Endpoint Management",
+    "status": "operational",
+    "updated_at": "2026-08-22T08:25:00Z"
+  },
+  {
+    "service": "Office Printer Service",
+    "status": "operational",
+    "updated_at": "2026-08-22T08:30:00Z"
   }
 ]

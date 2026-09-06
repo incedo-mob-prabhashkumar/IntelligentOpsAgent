@@ -515,18 +515,30 @@ class LocalITTools:
             return []
 
     def get_system_status(self, query: str | None = None) -> dict[str, Any]:
-        statement = select(SystemStatus).order_by(SystemStatus.service.asc())
+        base_statement = select(SystemStatus).order_by(SystemStatus.service.asc())
+        statement = base_statement
+        used_fallback = False
+
         if query:
-            wildcard = f"%{query.lower()}%"
-            statement = statement.where(
-                or_(
-                    func.lower(SystemStatus.service).like(wildcard),
-                    func.lower(SystemStatus.status).like(wildcard),
-                )
-            )
+            lowered_query = query.lower().strip()
+            query_tokens = sorted(_search_tokens(query))
+            search_terms = [lowered_query] + query_tokens if lowered_query else query_tokens
+
+            predicates = []
+            for term in search_terms:
+                wildcard = f"%{term}%"
+                predicates.append(func.lower(SystemStatus.service).like(wildcard))
+                predicates.append(func.lower(SystemStatus.status).like(wildcard))
+
+            if predicates:
+                statement = statement.where(or_(*predicates))
         try:
             with self.database.session_factory() as session:
                 rows = [_system_status_to_dict(row) for row in session.scalars(statement)]
+                # If no direct match is found, return overall status instead of an empty payload.
+                if query and not rows:
+                    rows = [_system_status_to_dict(row) for row in session.scalars(base_statement)]
+                    used_fallback = True
         except SQLAlchemyError as exc:
             logger.exception("System status lookup failed")
             return {
@@ -540,4 +552,6 @@ class LocalITTools:
             "statuses": rows,
             "count": len(rows),
             "source": "postgres.system_status",
+            "query": query or "",
+            "fallback_to_all": used_fallback,
         }

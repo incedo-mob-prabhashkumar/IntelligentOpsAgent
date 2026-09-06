@@ -25,5 +25,47 @@
     "notes": [
       "Assigned to messaging support queue"
     ]
+  },
+  {
+    "ticket_id": "TKT1003",
+    "employee_id": "EMP4010",
+    "summary": "Laptop screen flickers intermittently",
+    "category": "hardware",
+    "priority": "high",
+    "status": "open",
+    "created_at": "2026-08-19T10:15:00Z",
+    "updated_at": "2026-08-21T09:40:00Z",
+    "notes": [
+      "Display diagnostics requested",
+      "Awaiting asset team pickup"
+    ]
+  },
+  {
+    "ticket_id": "TKT1004",
+    "employee_id": "EMP5099",
+    "summary": "MFA approval prompt not received",
+    "category": "access",
+    "priority": "medium",
+    "status": "in_progress",
+    "created_at": "2026-08-20T14:10:00Z",
+    "updated_at": "2026-08-22T08:30:00Z",
+    "notes": [
+      "Token re-registered",
+      "Monitoring login attempts"
+    ]
+  },
+  {
+    "ticket_id": "TKT1005",
+    "employee_id": "EMP6123",
+    "summary": "Teams calls dropping after 15 minutes",
+    "category": "collaboration",
+    "priority": "medium",
+    "status": "resolved",
+    "created_at": "2026-08-12T11:00:00Z",
+    "updated_at": "2026-08-23T16:45:00Z",
+    "notes": [
+      "QoS policy updated",
+      "User confirmed issue resolved"
+    ]
   }
 ]

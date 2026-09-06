@@ -384,3 +384,111 @@ erDiagram
 		datetime updated_at
 	}
 ```
+
+## 16) How The Application Works (Updated)
+
+This section summarizes the current runtime behavior with the latest routing and safety controls.
+
+### 16.1) High-Level Runtime Pipeline
+
+```mermaid
+flowchart TD
+	U[User Message] --> UI[Streamlit UI app.py]
+	UI --> SV[ITSupportAgent service.py]
+	SV --> GR[LangGraph Workflow]
+
+	GR --> CC[capture_context]
+	CC --> DI[decide_intent]
+
+	DI --> KS[knowledge_search]
+	DI --> EL[employee_lookup]
+	DI --> SS[system_status]
+	DI --> TLV[ticket_lookup_validate]
+	DI --> TCV[ticket_create_validate]
+	DI --> TUV[ticket_update_validate]
+	DI --> ST[small_talk]
+
+	TLV --> TL[ticket_lookup]
+	TCV --> TC[ticket_create]
+	TUV --> TU[ticket_update]
+
+	KS --> CR[compose_response]
+	EL --> CR
+	SS --> CR
+	ST --> CR
+	TL --> CR
+	TC --> CR
+	TU --> CR
+
+	CR --> OUT[Assistant Response plus Tabular Tool Output]
+```
+
+### 16.2) Intent Decision Priority
+
+```mermaid
+flowchart TD
+	A[Input plus Context] --> B{Pending confirmation state?}
+	B -->|Yes| C[Use deterministic confirmation route]
+	B -->|No| D{Strict ID patterns EMP or TKT?}
+	D -->|Yes| E[Use deterministic ticket or employee route]
+	D -->|No| F[SentenceTransformer semantic intent]
+	F --> G{Semantic intent available?}
+	G -->|Yes| H[Apply semantic intent]
+	G -->|No| I[LLM tool selector intent]
+	I --> J{LLM intent available?}
+	J -->|Yes| K[Apply LLM intent]
+	J -->|No| L[Fallback if or else rules]
+
+	H --> M{Safety policy override needed?}
+	K --> M
+	L --> N[Final intent]
+	M -->|Incident without explicit create| O[Route to knowledge_search]
+	M -->|No override| N
+	O --> N
+```
+
+### 16.3) Ticket Creation Safety Path
+
+```mermaid
+flowchart TD
+	R[User asks for ticket support] --> V1{employee_id present?}
+	V1 -->|No| P1[Ask for employee ID and store pending_intent]
+	V1 -->|Yes| V2{issue summary valid?}
+	V2 -->|No| P2[Ask for issue summary and store proposed_issue_summary]
+	V2 -->|Yes| V3{employee exists?}
+	V3 -->|No| P3[Return employee not found]
+	V3 -->|Yes| V4{Check existing tickets first?}
+	V4 -->|Yes| P4[Ask confirmation and switch to lookup]
+	V4 -->|No| V5{Duplicate open ticket found?}
+	V5 -->|Yes| P5[Block creation and explain duplicate]
+	V5 -->|No| W[Create ticket]
+	W --> S[Return created ticket ID and status]
+```
+
+### 16.4) Data Layer and Tool Mapping
+
+```mermaid
+flowchart LR
+	subgraph Tools
+		T1[knowledge_search]
+		T2[employee_lookup]
+		T3[ticket_lookup]
+		T4[ticket_create]
+		T5[ticket_update]
+		T6[system_status]
+	end
+
+	subgraph Database
+		D1[(knowledge_base)]
+		D2[(employees)]
+		D3[(tickets)]
+		D4[(system_status)]
+	end
+
+	T1 --> D1
+	T2 --> D2
+	T3 --> D3
+	T4 --> D3
+	T5 --> D3
+	T6 --> D4
+```

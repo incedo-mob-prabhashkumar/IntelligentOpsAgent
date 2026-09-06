@@ -19,5 +19,26 @@
     "department": "Sales",
     "email": "rohan.iyer@example.com",
     "location": "Mumbai"
+  },
+  {
+    "employee_id": "EMP4010",
+    "name": "Meera Kapoor",
+    "department": "Human Resources",
+    "email": "meera.kapoor@example.com",
+    "location": "Delhi"
+  },
+  {
+    "employee_id": "EMP5099",
+    "name": "Vikram Sethi",
+    "department": "IT Operations",
+    "email": "vikram.sethi@example.com",
+    "location": "Hyderabad"
+  },
+  {
+    "employee_id": "EMP6123",
+    "name": "Ananya Rao",
+    "department": "Legal",
+    "email": "ananya.rao@example.com",
+    "location": "Chennai"
   }
 ]

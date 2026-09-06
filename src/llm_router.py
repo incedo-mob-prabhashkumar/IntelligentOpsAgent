@@ -1,11 +1,17 @@
 from __future__ import annotations
 
 import json
-import re
+import logging
+import os
+from functools import lru_cache
 from typing import Any
 
+import numpy as np
 from langchain_ollama import ChatOllama
 from langchain_openai import AzureChatOpenAI
+
+
+logger = logging.getLogger(__name__)
 
 
 VALID_INTENTS = {
@@ -17,6 +23,75 @@ VALID_INTENTS = {
     "system_status",
     "small_talk",
 }
+
+
+INTENT_PROTOTYPES: dict[str, list[str]] = {
+    "knowledge_search": [
+        "How do I reset my VPN password?",
+        "Steps to configure outlook sync",
+        "How can I install python on my laptop",
+        "Documentation for troubleshooting wifi setup",
+    ],
+    "employee_lookup": [
+        "Show employee details for EMP1024",
+        "Get employee profile information",
+        "Find employee contact details",
+    ],
+    "ticket_lookup": [
+        "What is the status of my ticket",
+        "Check existing issue progress",
+        "Lookup ticket TKT1001",
+        "How many tickets has EMP1024 raised",
+    ],
+    "ticket_update": [
+        "Update ticket TKT1004 summary",
+        "Modify my existing ticket description",
+        "Correct ticket details",
+    ],
+    "ticket_creation": [
+        "My VPN is not working, please raise a ticket",
+        "Create a new support ticket",
+        "Open a ticket for laptop issue",
+        "I cannot connect to wifi and need a ticket",
+    ],
+    "system_status": [
+        "What is the system status today",
+        "Is there any outage in VPN gateway",
+        "Check service health for email",
+        "Are systems operational",
+    ],
+    "small_talk": [
+        "Hello",
+        "Thanks for your help",
+        "Good morning",
+    ],
+}
+
+
+@lru_cache(maxsize=1)
+def _get_intent_embedding_model() -> Any:
+    from sentence_transformers import SentenceTransformer
+
+    model_name = os.getenv("INTENT_EMBED_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+    return SentenceTransformer(model_name)
+
+
+@lru_cache(maxsize=1)
+def _get_intent_centroids() -> dict[str, np.ndarray]:
+    model = _get_intent_embedding_model()
+    centroids: dict[str, np.ndarray] = {}
+    for intent, samples in INTENT_PROTOTYPES.items():
+        prototype_embeddings = model.encode(
+            samples,
+            normalize_embeddings=True,
+            convert_to_numpy=True,
+        )
+        centroid = np.mean(prototype_embeddings, axis=0)
+        centroid_norm = np.linalg.norm(centroid)
+        if centroid_norm == 0:
+            continue
+        centroids[intent] = centroid / centroid_norm
+    return centroids
 
 
 class IntentClassifier:
@@ -48,6 +123,49 @@ class IntentClassifier:
         else:
             raise ValueError("LLM_PROVIDER must be either 'ollama' or 'azure_openai'.")
 
+        self._tool_selector = None
+        try:
+            from src.tool_selector import SupportToolSelector
+
+            self._tool_selector = SupportToolSelector(self.llm)
+        except Exception:
+            logger.exception("LangChain LLMToolSelectorMiddleware is unavailable; using heuristic routing")
+            self._tool_selector = None
+
+    def _semantic_intent(self, query: str) -> str | None:
+        try:
+            model = _get_intent_embedding_model()
+            centroids = _get_intent_centroids()
+            query_embedding = model.encode([query], normalize_embeddings=True, convert_to_numpy=True)[0]
+
+            best_intent = None
+            best_score = -1.0
+            second_best = -1.0
+
+            for intent, centroid in centroids.items():
+                score = float(np.dot(query_embedding, centroid))
+
+                if score > best_score:
+                    second_best = best_score
+                    best_score = score
+                    best_intent = intent
+                elif score > second_best:
+                    second_best = score
+
+            if best_intent is None:
+                return None
+
+            # Confidence guardrails to avoid unstable routing on weak semantic matches.
+            if best_score < 0.30:
+                return None
+            if (best_score - second_best) < 0.03:
+                return None
+
+            return best_intent if best_intent in VALID_INTENTS else None
+        except Exception:
+            logger.exception("Semantic intent classification failed; falling back to heuristics")
+            return None
+
     def _heuristic_fallback(self, query: str) -> str:
         q = query.lower()
         if any(token in q for token in ["employee details", "employee info", "employee information", "employee profile"]):
@@ -65,26 +183,17 @@ class IntentClassifier:
         return "small_talk"
 
     def classify(self, query: str, context: dict[str, Any] | None = None) -> str:
-        prompt = (
-            "You are an IT support request intent classifier. "
-            "Classify the request into exactly one of these labels: "
-            "knowledge_search, employee_lookup, ticket_lookup, ticket_update, ticket_creation, system_status, small_talk.\n"
-            "Return strict JSON only, with this schema: "
-            '{"intent":"<one label>","reason":"<short reason>"}.\n'
-            f"User request: {query}\n"
-            f"Context: {json.dumps(context or {}, ensure_ascii=True)}"
-        )
+        semantic_intent = self._semantic_intent(query)
+        if semantic_intent in VALID_INTENTS:
+            return semantic_intent
 
-        try:
-            result = self.llm.invoke(prompt)
-            content = str(getattr(result, "content", "")).strip()
-            match = re.search(r"\{.*\}", content, re.DOTALL)
-            payload = json.loads(match.group(0) if match else content)
-            intent = str(payload.get("intent", "")).strip()
-            if intent in VALID_INTENTS:
-                return intent
-        except Exception:
-            pass
+        if self._tool_selector is not None:
+            try:
+                selected = self._tool_selector.select_intent(query, context)
+                if selected in VALID_INTENTS:
+                    return selected
+            except Exception:
+                pass
 
         return self._heuristic_fallback(query)
 

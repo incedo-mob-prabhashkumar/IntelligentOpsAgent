@@ -26,5 +26,33 @@
     "tags": ["wifi", "network", "connectivity"],
     "content": "Forget the corporate SSID, reconnect using your company credentials, and verify your device time is set automatically.",
     "last_updated": "2026-07-01"
+  },
+  {
+    "article_id": "KB-005",
+    "title": "MFA Unlock for Account Access",
+    "tags": ["mfa", "account", "access", "unlock"],
+    "content": "Open the identity portal, choose 'Unlock Account', verify with backup method, and wait 5 minutes before retrying sign in.",
+    "last_updated": "2026-07-20"
+  },
+  {
+    "article_id": "KB-006",
+    "title": "Laptop Screen Flicker Troubleshooting",
+    "tags": ["laptop", "hardware", "display", "screen"],
+    "content": "Update graphics drivers, disable adaptive refresh, test with an external monitor, and raise a hardware ticket if flicker continues.",
+    "last_updated": "2026-08-03"
+  },
+  {
+    "article_id": "KB-007",
+    "title": "Office Printer Offline Fix",
+    "tags": ["printer", "hardware", "office", "connectivity"],
+    "content": "Power cycle the printer, verify LAN cable or Wi-Fi signal, then remove and re-add the printer profile from system settings.",
+    "last_updated": "2026-08-11"
+  },
+  {
+    "article_id": "KB-008",
+    "title": "SSO Login Loop Resolution",
+    "tags": ["sso", "authentication", "login", "access"],
+    "content": "Clear browser cookies for company domains, sync device time, and retry login in an incognito window before escalating.",
+    "last_updated": "2026-08-28"
   }
 ]
