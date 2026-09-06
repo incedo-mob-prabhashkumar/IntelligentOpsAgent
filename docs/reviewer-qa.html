@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI IT Support Assistant - Reviewer Q&A</title>
+  <style>
+    :root {
+      --bg: #f6f8fc;
+      --surface: #ffffff;
+      --surface-2: #f8fafc;
+      --text: #15202b;
+      --muted: #546376;
+      --accent: #0f766e;
+      --accent-2: #0b3b63;
+      --border: #d9e1ea;
+      --shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(15, 118, 110, 0.08), transparent 30%),
+        radial-gradient(circle at top right, rgba(11, 59, 99, 0.08), transparent 30%),
+        var(--bg);
+      line-height: 1.6;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(8px);
+      background: rgba(255, 255, 255, 0.9);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-inner {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 22px 20px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.85rem;
+      color: var(--accent-2);
+    }
+
+    header p {
+      margin: 6px 0 0;
+      color: var(--muted);
+    }
+
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 22px 20px 48px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    h2 {
+      margin: 0 0 10px;
+      color: var(--accent-2);
+      font-size: 1.35rem;
+    }
+
+    h3 {
+      margin: 16px 0 8px;
+      color: var(--accent);
+      font-size: 1.05rem;
+    }
+
+    p { margin: 0 0 10px; }
+
+    ul, ol {
+      margin: 8px 0 0 22px;
+      padding: 0;
+    }
+
+    li { margin: 4px 0; }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+
+    .muted { color: var(--muted); }
+
+    .qa {
+      border-left: 4px solid var(--accent);
+      padding-left: 14px;
+      margin-top: 12px;
+    }
+
+    .q {
+      margin: 0 0 8px;
+      font-weight: 700;
+      color: var(--accent-2);
+    }
+
+    .a { margin: 0; }
+
+    code, pre { font-family: Consolas, "Courier New", monospace; }
+
+    code {
+      background: #eef3f8;
+      border: 1px solid #d9e1ea;
+      border-radius: 4px;
+      padding: 1px 5px;
+    }
+
+    pre {
+      margin: 10px 0 0;
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 10px;
+      padding: 14px;
+      overflow: auto;
+    }
+
+    .diagram {
+      overflow-x: auto;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .pill {
+      display: inline-block;
+      background: rgba(15, 118, 110, 0.1);
+      color: var(--accent);
+      border: 1px solid rgba(15, 118, 110, 0.18);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 0.92rem;
+    }
+
+    .section-note {
+      color: var(--muted);
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <h1>AI IT Support Assistant - Reviewer Q&A</h1>
+      <p>Question-and-answer HTML with diagrams for architecture review, viva, and demo explanation.</p>
+      <div class="pill-row">
+        <span class="pill">Why Streamlit</span>
+        <span class="pill">Why SentenceTransformer</span>
+        <span class="pill">State Management</span>
+        <span class="pill">LangGraph Flow</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Project Summary</h2>
+      <p>This project is a stateful AI IT support assistant built with Streamlit, LangGraph, PostgreSQL, Ollama, and semantic retrieval. It helps employees ask IT questions, look up knowledge, check ticket status, and create or update tickets safely.</p>
+      <p class="section-note">The Q&A below is written in reviewer-friendly language so you can explain the project clearly during evaluation.</p>
+    </section>
+
+    <section class="card grid">
+      <div>
+        <h2>LangGraph, Tools, and State Management</h2>
+        <div class="qa">
+          <p class="q">Question: How is LangGraph working in this project?</p>
+          <p class="a">LangGraph is the workflow engine of the assistant. It takes the user message, captures context, decides the intent, validates required fields, and routes the request to the correct node. It helps the app handle multi-step IT support conversations instead of treating each message as isolated text.</p>
+        </div>
+        <div class="qa">
+          <p class="q">Question: How is LangGraph helping here?</p>
+          <p class="a">It helps by making the assistant controlled and stateful. The graph can pause for missing information, remember earlier user input, switch between knowledge search and ticket workflows, and make sure write actions only happen after validation. That makes the assistant more reliable than a plain prompt-based chatbot.</p>
+        </div>
+        <div class="qa">
+          <p class="q">Question: What tools are used in this project?</p>
+          <p class="a">The assistant uses a knowledge search tool, employee lookup tool, ticket lookup tool, ticket creation tool, ticket update tool, and system status tool. These tools connect the AI workflow to the local PostgreSQL data and return structured results for the UI.</p>
+        </div>
+        <div class="qa">
+          <p class="q">Question: Where is state management happening and how?</p>
+          <p class="a">State management happens inside the LangGraph state object and the service flow. The state stores values such as user input, intent, employee ID, ticket ID, pending intent, missing fields, tool result, and final response. Each node in the graph reads from and writes to this shared state so the assistant can continue the same conversation across turns.</p>
+        </div>
+      </div>
+      <div>
+        <h3>How LangGraph, Tools, and State Connect</h3>
+        <div class="diagram mermaid">
+flowchart TD
+	U[User message] --> S[Streamlit UI]
+	S --> L[LangGraph workflow]
+	L --> C[Capture context]
+	C --> I[Decide intent]
+	I --> V[Validate inputs]
+	V -->|knowledge_search| K[Knowledge tool]
+	V -->|employee_lookup| E[Employee lookup tool]
+	V -->|ticket_lookup| T1[Ticket lookup tool]
+	V -->|ticket_creation| T2[Ticket creation tool]
+	V -->|ticket_update| T3[Ticket update tool]
+	V -->|system_status| SS[System status tool]
+	K --> ST[(Shared state)]
+	E --> ST
+	T1 --> ST
+	T2 --> ST
+	T3 --> ST
+	SS --> ST
+	ST --> R[Compose final response]
+	R --> S
+        </div>
+      </div>
+    </section>
+
+    <section class="card grid">
+      <div>
+        <h2>Why Streamlit?</h2>
+        <div class="qa">
+          <p class="q">Question: Why did you use Streamlit in this project?</p>
+          <p class="a">Streamlit is used because it lets me build a clean chat-based user interface quickly in Python. It is simple to run, easy to demo, and ideal for showing AI workflow results, chat history, and structured table outputs without building a full frontend stack.</p>
+        </div>
+        <div class="qa">
+          <p class="q">Question: What is the advantage of Streamlit for a capstone project?</p>
+          <p class="a">It reduces UI complexity, speeds up development, and keeps the whole project in one language. That makes it easier to focus on the core AI logic, routing, validation, and database integration.</p>
+        </div>
+      </div>
+      <div>
+        <h3>Streamlit Usage Flow</h3>
+        <div class="diagram mermaid">
+flowchart TD
+	U[User enters message] --> S[Streamlit chat UI]
+	S --> A[ITSupportAgent.handle_message]
+	A --> G[LangGraph workflow]
+	G --> R[Final response]
+	R --> S
+        </div>
+      </div>
+    </section>
+
+    <section class="card grid">
+      <div>
+        <h2>Why SentenceTransformer?</h2>
+        <div class="qa">
+          <p class="q">Question: Why did you use SentenceTransformer for knowledge search?</p>
+          <p class="a">SentenceTransformer helps the assistant understand meaning, not just exact words. If a user says "VPN not connecting" and the knowledge article says "VPN authentication issue," semantic embeddings can still match them. That gives better results than keyword search alone.</p>
+        </div>
+        <div class="qa">
+          <p class="q">Question: Why not use only keyword matching?</p>
+          <p class="a">Keyword matching is too rigid. Users describe the same problem in different ways, so semantic search improves relevance. The system still keeps a lexical fallback, so if embeddings are unavailable the app can still return useful results.</p>
+        </div>
+      </div>
+      <div>
+        <h3>Semantic Retrieval Flow</h3>
+        <div class="diagram mermaid">
+flowchart TD
+	Q[User query] --> E1[Create embedding]
+	A1[Knowledge article] --> E2[Create article embedding]
+	E1 --> C[Cosine similarity]
+	E2 --> C
+	C --> T[Top matched articles]
+	T --> R[Assistant response]
+	C --> F[Lexical fallback if needed]
+        </div>
+      </div>
+    </section>
+
+    <section class="card grid">
+      <div>
+        <h2>What is state management?</h2>
+        <div class="qa">
+          <p class="q">Question: What is state management in this app?</p>
+          <p class="a">State management means keeping important conversation information across multiple user turns. In this app, the state stores values like <code>employee_id</code>, <code>pending_intent</code>, <code>proposed_issue_summary</code>, missing fields, tool results, and the final response.</p>
+        </div>
+        <div class="qa">
+          <p class="q">Question: Why is state management important here?</p>
+          <p class="a">Because the assistant often needs multiple steps to complete one task. For example, the user may first mention a VPN issue, then later provide their employee ID. The state helps the assistant remember the earlier message and continue the same workflow instead of starting over.</p>
+        </div>
+      </div>
+      <div>
+        <h3>State Management Flow</h3>
+        <div class="diagram mermaid">
+flowchart TD
+	U[User message] --> C[Capture context]
+	C --> S[Save state values]
+	S --> I[Decide intent]
+	I --> V[Validate required fields]
+	V --> T[Run tool if valid]
+	T --> R[Store result in state]
+	R --> O[Compose final response]
+	O --> U2[Next user turn continues from state]
+        </div>
+      </div>
+    </section>
+
+    <section class="card grid">
+      <div>
+        <h2>How does the app work end to end?</h2>
+        <div class="qa">
+          <p class="q">Question: Walk me through the full flow of the application.</p>
+          <p class="a">The user sends a message in Streamlit. The service layer sends the message to LangGraph. The graph captures context, decides the intent, validates the inputs, runs the right tool from the tool layer, reads or writes PostgreSQL if needed, and then uses grounded tool output to generate the final response. Streamlit then shows the answer and any table output.</p>
+        </div>
+        <div class="qa">
+          <p class="q">Question: What makes the response trustworthy?</p>
+          <p class="a">The assistant does not invent ticket details. It uses validated tool output from the database and knowledge base, then formats that output into a user-friendly response.</p>
+        </div>
+      </div>
+      <div>
+        <h3>End-to-End Architecture</h3>
+        <div class="diagram mermaid">
+flowchart TD
+	U[User] --> UI[Streamlit UI]
+	UI --> S[Service layer]
+	S --> G[LangGraph workflow]
+	G --> C[Capture context]
+	C --> I[Intent decision]
+	I --> V[Validation]
+	V --> T[Tool execution]
+	T --> D[(PostgreSQL / knowledge data)]
+	T --> L[Grounded response generation]
+	L --> UI
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>More Reviewer Questions on LangGraph and State</h2>
+      <div class="qa">
+        <p class="q">Question: Why did you choose LangGraph instead of a single LLM prompt?</p>
+        <p class="a">Because the project needs workflow control, not just text generation. A single prompt cannot reliably manage ticket lookup, ticket creation, validation, memory, and tool routing. LangGraph lets me split the problem into nodes with clear responsibilities.</p>
+      </div>
+      <div class="qa">
+        <p class="q">Question: How does the assistant know which tool to call?</p>
+        <p class="a">The intent decision node checks the message and context, then routes to the appropriate tool path. For example, a VPN help question goes to knowledge search, a ticket status request goes to ticket lookup, and a ticket issue request goes through validation before ticket creation.</p>
+      </div>
+      <div class="qa">
+        <p class="q">Question: How does the state help with follow-up questions?</p>
+        <p class="a">If the user forgets to provide employee ID or issue summary, the assistant stores the pending request in state and asks a follow-up question. When the user replies later, the graph uses the stored state to continue the same workflow without losing context.</p>
+      </div>
+      <div class="qa">
+        <p class="q">Question: What happens if the assistant switches topics mid-conversation?</p>
+        <p class="a">The intent node re-evaluates the new message while still keeping the conversation history in state. That means the assistant can either continue the previous task or start a new one depending on the user’s latest input and the current pending state.</p>
+      </div>
+      <div class="qa">
+        <p class="q">Question: Where are the tools implemented?</p>
+        <p class="a">The tools are implemented in the local tool layer of the project, mainly in <code>src/tools.py</code>, and they use PostgreSQL-backed data from the models and database layer.</p>
+      </div>
+      <div class="qa">
+        <p class="q">Question: How does the state object move through the app?</p>
+        <p class="a">The service layer sends the message and current context into the graph. The graph updates the state at each node, and the final node returns the response plus any structured tool result back to Streamlit.</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Question Types Covered</h2>
+      <p>This page includes multiple reviewer question styles so you can prepare for different evaluation levels.</p>
+      <div class="grid">
+        <div>
+          <h3>Easy / Warm-up</h3>
+          <ul>
+            <li>What is this project about?</li>
+            <li>Why did you build it?</li>
+            <li>What technologies did you use?</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Medium / Design</h3>
+          <ul>
+            <li>Why Streamlit?</li>
+            <li>Why SentenceTransformer?</li>
+            <li>How does state management work?</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Hard / Deep Dive</h3>
+          <ul>
+            <li>Why use LangGraph instead of one prompt?</li>
+            <li>How do you stop duplicate ticket creation?</li>
+            <li>What happens if a tool fails?</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Demo / Viva</h3>
+          <ul>
+            <li>Show ticket creation flow.</li>
+            <li>Show knowledge search flow.</li>
+            <li>Show multi-turn memory behavior.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Answered Reviewer Questions</h2>
+      <p>Use these answers during viva or review. The diagrams above show the key flows, so you can point to them while answering.</p>
+
+      <div class="qa">
+        <p class="q">Q: What problem does this project solve?</p>
+        <p class="a">A: It helps employees get fast IT support for common tasks like VPN help, ticket status, ticket creation, and knowledge lookup without needing manual support every time.</p>
+      </div>
+      <div class="qa">
+        <p class="q">Q: Why did you use Streamlit?</p>
+        <p class="a">A: Streamlit gives a fast Python-based chat UI, supports quick demos, and makes it easy to show chat history, trace output, and structured tables without building a separate frontend.</p>
+      </div>
+      <div class="qa">
+        <p class="q">Q: Why did you use SentenceTransformer?</p>
+        <p class="a">A: SentenceTransformer improves knowledge search by matching meaning instead of exact words. That means user phrases like "VPN not connecting" can still find the right article even if the article uses different wording.</p>
+      </div>
+      <div class="qa">
+        <p class="q">Q: How is LangGraph working here?</p>
+        <p class="a">A: LangGraph is the control flow engine. It captures context, decides the intent, validates inputs, calls the right tool, and then sends the tool result to response generation. It makes the app reliable for multi-step conversations.</p>
+      </div>
+      <div class="qa">
+        <p class="q">Q: How does state management work?</p>
+        <p class="a">A: The graph keeps a shared state object that stores values like employee ID, ticket ID, pending intent, missing fields, tool result, and final response. Each node reads and updates this state so the assistant remembers the conversation.</p>
+      </div>
+      <div class="qa">
+        <p class="q">Q: Where does state management happen in the app?</p>
+        <p class="a">A: It happens inside the LangGraph workflow and the service layer. The service passes the current context into the graph, and every node in the graph updates the same shared state as the conversation continues.</p>
+      </div>
+      <div class="qa">
+        <p class="q">Q: What tools are used?</p>
+        <p class="a">A: The project uses knowledge search, employee lookup, ticket lookup, ticket creation, ticket update, and system status tools. These are the local operations that connect the assistant to the database and knowledge base.</p>
+      </div>
+      <div class="qa">
+        <p class="q">Q: How does the assistant choose the right tool?</p>
+        <p class="a">A: The intent decision node analyzes the user input and current state, then routes the request to the correct tool. For example, a support article question goes to knowledge search and a ticket update request goes to the ticket update path after validation.</p>
+      </div>
+      <div class="qa">
+        <p class="q">Q: Why is validation needed before write actions?</p>
+        <p class="a">A: Validation prevents bad writes. The assistant checks for required fields, employee existence, duplicate tickets, and valid ticket IDs before it creates or updates records in the database.</p>
+      </div>
+      <div class="qa">
+        <p class="q">Q: How does duplicate ticket prevention work?</p>
+        <p class="a">A: Before creating a ticket, the assistant checks open or recent tickets for the same employee and similar issue text. If a matching issue already exists, the assistant stops the duplicate and explains the reason to the user.</p>
+      </div>
+      <div class="qa">
+        <p class="q">Q: How does the project handle missing information?</p>
+        <p class="a">A: If the user omits something important like employee ID or issue summary, the assistant stores the pending task in state and asks a follow-up question. Once the user provides the missing value, the same workflow continues.</p>
+      </div>
+      <div class="qa">
+        <p class="q">Q: How does the project stay grounded?</p>
+        <p class="a">A: It uses tool output from the knowledge base and database instead of guessing. The final response is generated from validated results so the assistant does not invent ticket IDs or status values.</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Full Reviewer Question & Answer Bank</h2>
+      <p>This bank gives short answers for every major question type in the project.</p>
+
+      <h3>Project Overview</h3>
+      <div class="qa"><p class="q">Q: What problem does the assistant solve?</p><p class="a">A: It helps employees get fast IT support for VPN issues, ticket status, knowledge lookup, and ticket creation or update.</p></div>
+      <div class="qa"><p class="q">Q: Who is the target user?</p><p class="a">A: The target user is an employee who needs quick help from an IT support assistant.</p></div>
+      <div class="qa"><p class="q">Q: What is the main purpose of the project?</p><p class="a">A: The purpose is to automate common IT support tasks with a stateful AI assistant.</p></div>
+      <div class="qa"><p class="q">Q: Why is this useful in a real organization?</p><p class="a">A: It reduces manual support work, gives faster answers, and improves consistency in ticket handling.</p></div>
+
+      <h3>Architecture</h3>
+      <div class="qa"><p class="q">Q: Why did you choose a layered architecture?</p><p class="a">A: A layered design keeps UI, service logic, graph orchestration, tools, and data access separate and easier to maintain.</p></div>
+      <div class="qa"><p class="q">Q: What does the service layer do?</p><p class="a">A: It receives messages from the UI and passes them into the workflow with the current context.</p></div>
+      <div class="qa"><p class="q">Q: What does the orchestration layer do?</p><p class="a">A: LangGraph controls routing, validation, tool execution, and response flow.</p></div>
+      <div class="qa"><p class="q">Q: How do the UI, graph, tools, and database work together?</p><p class="a">A: The UI collects the message, LangGraph decides the path, tools query or update the database, and the final answer is shown back in the UI.</p></div>
+
+      <h3>Streamlit / UI</h3>
+      <div class="qa"><p class="q">Q: Why did you use Streamlit?</p><p class="a">A: It gives a fast Python chat UI and is ideal for showing a live demo.</p></div>
+      <div class="qa"><p class="q">Q: How does the chat interface work?</p><p class="a">A: The user types a message, Streamlit sends it to the app logic, and the assistant reply is displayed in the chat.</p></div>
+      <div class="qa"><p class="q">Q: How do users see tool traces and tables?</p><p class="a">A: The UI can show structured tool outputs and trace details alongside the response.</p></div>
+      <div class="qa"><p class="q">Q: Why is Streamlit good for demos?</p><p class="a">A: It is simple, quick to build, and easy to run locally without extra frontend code.</p></div>
+
+      <h3>LangGraph / Workflow</h3>
+      <div class="qa"><p class="q">Q: What is LangGraph doing in this project?</p><p class="a">A: It manages the conversation workflow as a graph of nodes and edges.</p></div>
+      <div class="qa"><p class="q">Q: Why is LangGraph better than a single prompt chain?</p><p class="a">A: It gives explicit control over state, routing, validation, and multi-step flows.</p></div>
+      <div class="qa"><p class="q">Q: How does the graph decide the next step?</p><p class="a">A: It checks the current message, intent, and required fields, then routes to the proper node.</p></div>
+      <div class="qa"><p class="q">Q: How does the app handle multi-step flows?</p><p class="a">A: The graph stores pending context and continues the same workflow when the user replies later.</p></div>
+
+      <h3>State Management</h3>
+      <div class="qa"><p class="q">Q: What is state management?</p><p class="a">A: It is the process of storing important conversation data across turns.</p></div>
+      <div class="qa"><p class="q">Q: Which values are stored in state?</p><p class="a">A: Values like employee ID, ticket ID, pending intent, missing fields, tool result, and final response are stored.</p></div>
+      <div class="qa"><p class="q">Q: How does the assistant remember previous user messages?</p><p class="a">A: It keeps the earlier context inside the shared graph state.</p></div>
+      <div class="qa"><p class="q">Q: How does state help with ticket creation and lookup?</p><p class="a">A: It lets the assistant continue the same support flow even if the user provides details in multiple messages.</p></div>
+
+      <h3>SentenceTransformer / Retrieval</h3>
+      <div class="qa"><p class="q">Q: Why did you use SentenceTransformer?</p><p class="a">A: It improves knowledge search by matching meaning, not just keywords.</p></div>
+      <div class="qa"><p class="q">Q: Why not use keyword search only?</p><p class="a">A: Keyword search misses paraphrases and different wording, while semantic search is more flexible.</p></div>
+      <div class="qa"><p class="q">Q: How does semantic search work?</p><p class="a">A: The query and knowledge articles are converted into embeddings and compared using similarity.</p></div>
+      <div class="qa"><p class="q">Q: What is lexical fallback and why is it needed?</p><p class="a">A: Lexical fallback is a keyword-based backup used when semantic retrieval is unavailable or low confidence.</p></div>
+
+      <h3>LLM / Intent Routing</h3>
+      <div class="qa"><p class="q">Q: What role does Ollama play?</p><p class="a">A: Ollama provides the local model used for intent classification and response generation support.</p></div>
+      <div class="qa"><p class="q">Q: How does the assistant detect intent?</p><p class="a">A: It uses rules and LLM classification to decide whether the user wants knowledge search, ticket lookup, ticket creation, or another action.</p></div>
+      <div class="qa"><p class="q">Q: Why use both deterministic rules and LLM classification?</p><p class="a">A: Rules handle strict cases reliably, and the LLM handles flexible natural language.</p></div>
+      <div class="qa"><p class="q">Q: What happens if the intent is unclear?</p><p class="a">A: The assistant falls back to asking for clarification or using a safe default path.</p></div>
+
+      <h3>Database / Persistence</h3>
+      <div class="qa"><p class="q">Q: What tables are in PostgreSQL?</p><p class="a">A: The main tables are employees, knowledge_base, tickets, and system_status.</p></div>
+      <div class="qa"><p class="q">Q: Why did you choose PostgreSQL?</p><p class="a">A: It is reliable, structured, and fits the relational data used by support records.</p></div>
+      <div class="qa"><p class="q">Q: How is sample data loaded?</p><p class="a">A: Startup code and the init SQL file seed the database when needed.</p></div>
+      <div class="qa"><p class="q">Q: How are duplicate tickets prevented?</p><p class="a">A: The create flow checks for matching open or recent tickets before writing a new one.</p></div>
+
+      <h3>Validation / Safety</h3>
+      <div class="qa"><p class="q">Q: What validations happen before write actions?</p><p class="a">A: The assistant checks missing fields, employee existence, duplicate tickets, and valid ticket IDs before writing.</p></div>
+      <div class="qa"><p class="q">Q: How do you ensure the employee exists?</p><p class="a">A: The employee lookup tool verifies the ID before ticket operations continue.</p></div>
+      <div class="qa"><p class="q">Q: What happens when information is missing?</p><p class="a">A: The assistant asks for the missing value and stores the pending task in state.</p></div>
+      <div class="qa"><p class="q">Q: How do you stop invented answers?</p><p class="a">A: The response is grounded in tool output and database records rather than free-form guessing.</p></div>
+
+      <h3>Testing</h3>
+      <div class="qa"><p class="q">Q: What do your unit tests cover?</p><p class="a">A: They cover routing, validation, state continuity, duplicate prevention, and ticket workflows.</p></div>
+      <div class="qa"><p class="q">Q: How do you test ticket creation and update?</p><p class="a">A: The tests simulate ticket flows and check that the correct outputs are produced.</p></div>
+      <div class="qa"><p class="q">Q: How do you test state continuity?</p><p class="a">A: The tests use multi-turn examples to check that the assistant remembers earlier context.</p></div>
+      <div class="qa"><p class="q">Q: What are the limits of your current test suite?</p><p class="a">A: The tests are mainly functional and could be expanded with broader evaluation and edge cases.</p></div>
+
+      <h3>Deployment / Operation</h3>
+      <div class="qa"><p class="q">Q: How do you run the project locally?</p><p class="a">A: Activate the virtual environment, install dependencies, start PostgreSQL and Ollama, then run Streamlit.</p></div>
+      <div class="qa"><p class="q">Q: What environment variables are required?</p><p class="a">A: The main ones are OLLAMA_BASE_URL, OLLAMA_MODEL, and POSTGRES_DSN.</p></div>
+      <div class="qa"><p class="q">Q: What needs to be running before the app starts?</p><p class="a">A: PostgreSQL and Ollama should be available before launching the app.</p></div>
+      <div class="qa"><p class="q">Q: How would you deploy this for production use?</p><p class="a">A: I would add proper authentication, stronger monitoring, migrations, and a deployed database and model service.</p></div>
+
+      <h3>Deep Reviewer / Challenge Questions</h3>
+      <div class="qa"><p class="q">Q: Why should this be called an agentic system and not just a chatbot?</p><p class="a">A: Because it reasons over state, routes between tools, validates actions, and follows a workflow rather than only generating text.</p></div>
+      <div class="qa"><p class="q">Q: How do you know the tool output is grounded?</p><p class="a">A: The response is built from structured tool results and database reads, not from unsupported guesses.</p></div>
+      <div class="qa"><p class="q">Q: What are the biggest risks in this design?</p><p class="a">A: Main risks are intent misclassification, missing validation, retrieval errors, and lack of authentication for a production setup.</p></div>
+      <div class="qa"><p class="q">Q: What would you improve if you had more time?</p><p class="a">A: I would add stronger evaluation, role-based access, better observability, and more ticket lifecycle actions.</p></div>
+    </section>
+  </main>
+
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({ startOnLoad: true, theme: "default", securityLevel: "loose" });
+  </script>
+</body>
+</html>
