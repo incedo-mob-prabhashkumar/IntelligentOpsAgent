@@ -56,6 +56,14 @@ class ToolSelectorTests(unittest.TestCase):
         classifier._semantic_intent.assert_called_once()
         classifier._tool_selector.select_intent.assert_called_once()
 
+    def test_classifier_uses_semantic_language_understanding_for_employee_ticket_queries(self) -> None:
+        classifier = IntentClassifier.__new__(IntentClassifier)
+        classifier._semantic_intent = MagicMock(return_value="ticket_lookup")
+        classifier._tool_selector = MagicMock()
+        classifier._tool_selector.select_intent.return_value = "small_talk"
+        intent = classifier.classify("get all tickets raised by EMP1024", {})
+        self.assertEqual(intent, "ticket_lookup")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -8,7 +8,8 @@ from typing import Any
 
 import numpy as np
 from langchain_ollama import ChatOllama
-from langchain_openai import AzureChatOpenAI
+from langchain_openai import AzureChatOpenAI, ChatOpenAI
+from pydantic import SecretStr
 
 
 logger = logging.getLogger(__name__)
@@ -42,6 +43,10 @@ INTENT_PROTOTYPES: dict[str, list[str]] = {
         "Check existing issue progress",
         "Lookup ticket TKT1001",
         "How many tickets has EMP1024 raised",
+        "Get all tickets raised by EMP1024",
+        "Show all issues for EMP1024",
+        "Find all tickets raised by employee EMP1024",
+        "All tickets raised by EMP1024",
     ],
     "ticket_update": [
         "Update ticket TKT1004 summary",
@@ -104,6 +109,10 @@ class IntentClassifier:
         azure_api_key: str = "",
         azure_api_version: str = "2024-10-21",
         azure_deployment: str = "",
+        openai_api_key: str = "",
+        openai_model: str = "gpt-4o-mini",
+        openai_base_url: str = "https://api.openai.com/v1",
+        llama_api_key: str = "",
     ) -> None:
         if provider == "azure_openai":
             if not all([azure_endpoint, azure_api_key, azure_deployment]):
@@ -113,15 +122,31 @@ class IntentClassifier:
                 )
             self.llm = AzureChatOpenAI(
                 azure_endpoint=azure_endpoint,
-                api_key=azure_api_key,
+                api_key=SecretStr(azure_api_key),
                 api_version=azure_api_version,
                 azure_deployment=azure_deployment,
                 temperature=0,
             )
+        elif provider == "openai":
+            if not openai_api_key:
+                raise ValueError("OpenAI requires OPENAI_API_KEY.")
+            self.llm = ChatOpenAI(
+                model=openai_model or model,
+                api_key=SecretStr(openai_api_key),
+                base_url=openai_base_url or None,
+                temperature=0,
+            )
         elif provider == "ollama":
             self.llm = ChatOllama(model=model, base_url=base_url, temperature=0)
+        elif provider == "llama":
+            self.llm = ChatOpenAI(
+                model=model or "llama3.1:8b",
+                api_key=SecretStr(llama_api_key or "not-needed"),
+                base_url=base_url or "http://localhost:8080/v1",
+                temperature=0,
+            )
         else:
-            raise ValueError("LLM_PROVIDER must be either 'ollama' or 'azure_openai'.")
+            raise ValueError("LLM_PROVIDER must be one of: 'ollama', 'llama', 'azure_openai', or 'openai'.")
 
         self._tool_selector = None
         try:
@@ -195,7 +220,8 @@ class IntentClassifier:
             except Exception:
                 pass
 
-        return self._heuristic_fallback(query)
+        heuristic_intent = self._heuristic_fallback(query)
+        return heuristic_intent
 
 
 class SupportResponseGenerator:
@@ -208,6 +234,10 @@ class SupportResponseGenerator:
         azure_api_key: str = "",
         azure_api_version: str = "2024-10-21",
         azure_deployment: str = "",
+        openai_api_key: str = "",
+        openai_model: str = "gpt-4o-mini",
+        openai_base_url: str = "https://api.openai.com/v1",
+        llama_api_key: str = "",
     ) -> None:
         if provider == "azure_openai":
             if not all([azure_endpoint, azure_api_key, azure_deployment]):
@@ -217,15 +247,31 @@ class SupportResponseGenerator:
                 )
             self.llm = AzureChatOpenAI(
                 azure_endpoint=azure_endpoint,
-                api_key=azure_api_key,
+                api_key=SecretStr(azure_api_key),
                 api_version=azure_api_version,
                 azure_deployment=azure_deployment,
                 temperature=0.2,
             )
+        elif provider == "openai":
+            if not openai_api_key:
+                raise ValueError("OpenAI requires OPENAI_API_KEY.")
+            self.llm = ChatOpenAI(
+                model=openai_model or model,
+                api_key=SecretStr(openai_api_key),
+                base_url=openai_base_url or None,
+                temperature=0.2,
+            )
         elif provider == "ollama":
             self.llm = ChatOllama(model=model, base_url=base_url, temperature=0.2)
+        elif provider == "llama":
+            self.llm = ChatOpenAI(
+                model=model or "llama3.1:8b",
+                api_key=SecretStr(llama_api_key or "not-needed"),
+                base_url=base_url or "http://localhost:8080/v1",
+                temperature=0.2,
+            )
         else:
-            raise ValueError("LLM_PROVIDER must be either 'ollama' or 'azure_openai'.")
+            raise ValueError("LLM_PROVIDER must be one of: 'ollama', 'llama', 'azure_openai', or 'openai'.")
 
     def compose(
         self,

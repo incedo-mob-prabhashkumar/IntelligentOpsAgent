@@ -21,23 +21,42 @@ class ITSupportAgent:
         self.settings = settings
         self.database, self.database_status = initialize_database(settings.postgres_dsn)
         self.tools = LocalITTools(self.database)
+        model_name = (
+            settings.ollama_model
+            if settings.llm_provider == "ollama"
+            else settings.llama_model if settings.llm_provider == "llama" else settings.openai_model
+        )
+        base_url = (
+            settings.ollama_base_url
+            if settings.llm_provider == "ollama"
+            else settings.llama_base_url if settings.llm_provider == "llama" else settings.openai_base_url
+        )
+
         self.classifier = IntentClassifier(
-            model=settings.ollama_model,
-            base_url=settings.ollama_base_url,
+            model=model_name,
+            base_url=base_url,
             provider=settings.llm_provider,
             azure_endpoint=settings.azure_openai_endpoint,
             azure_api_key=settings.azure_openai_api_key,
             azure_api_version=settings.azure_openai_api_version,
             azure_deployment=settings.azure_openai_deployment,
+            openai_api_key=settings.openai_api_key,
+            openai_model=settings.openai_model,
+            openai_base_url=settings.openai_base_url,
+            llama_api_key=settings.llama_api_key,
         )
         self.responder = SupportResponseGenerator(
-            model=settings.ollama_model,
-            base_url=settings.ollama_base_url,
+            model=model_name,
+            base_url=base_url,
             provider=settings.llm_provider,
             azure_endpoint=settings.azure_openai_endpoint,
             azure_api_key=settings.azure_openai_api_key,
             azure_api_version=settings.azure_openai_api_version,
             azure_deployment=settings.azure_openai_deployment,
+            openai_api_key=settings.openai_api_key,
+            openai_model=settings.openai_model,
+            openai_base_url=settings.openai_base_url,
+            llama_api_key=settings.llama_api_key,
         )
         self.graph = build_graph(self.tools, self.classifier.classify, self.responder.compose)
 

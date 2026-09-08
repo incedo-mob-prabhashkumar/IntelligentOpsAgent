@@ -214,6 +214,17 @@ class AgentGraphTests(unittest.TestCase):
         self.assertEqual(result["missing_fields"], ["employee_id"])
         self.assertEqual(result["context"]["pending_intent"], "ticket_lookup")
 
+    def test_employee_issue_queries_route_to_ticket_lookup(self) -> None:
+        for query in [
+            "get all issues of EMP1024",
+            "get all ticket raised by employee EMP1024",
+            "all tickets raised by EMP1024",
+        ]:
+            with self.subTest(query=query):
+                result = self.graph.invoke({"user_input": query, "context": {}})
+                self.assertEqual(result["intent"], "ticket_lookup")
+                self.assertIn("TKT1001", result["final_response"])
+
     def test_follow_up_employee_id_completes_pending_lookup(self) -> None:
         first = self.graph.invoke({"user_input": "What is the status of my laptop issue?", "context": {}})
         second = self.graph.invoke({"user_input": "EMP1024", "context": first["context"]})
@@ -363,6 +374,36 @@ class AgentGraphTests(unittest.TestCase):
         result = self.graph.invoke({"user_input": "i am unable to install python", "context": context})
         self.assertEqual(result["intent"], "ticket_creation")
         self.assertIn("created successfully", result["final_response"])
+
+    def test_issue_description_with_device_keywords_routes_to_ticket_creation(self) -> None:
+        result = self.graph.invoke({"user_input": "its hardware issue", "context": {}})
+        self.assertEqual(result["intent"], "ticket_creation")
+        self.assertIn("employee ID", result["final_response"])
+
+    def test_video_blurry_issue_routes_to_ticket_creation(self) -> None:
+        result = self.graph.invoke({"user_input": "video is blurry", "context": {}})
+        self.assertEqual(result["intent"], "ticket_creation")
+        self.assertIn("employee ID", result["final_response"])
+
+    def test_direct_create_confirmation_after_lookup_moves_to_ticket_creation(self) -> None:
+        first = self.graph.invoke({"user_input": "i am unable to install python", "context": {}})
+        self.assertEqual(first["intent"], "knowledge_search")
+
+        second = self.graph.invoke({"user_input": "EMP1024", "context": first["context"]})
+        self.assertEqual(second["intent"], "ticket_creation")
+        self.assertIn("Would you like me to check existing tickets", second["final_response"])
+
+        third = self.graph.invoke({"user_input": "yes create new", "context": second["context"]})
+        self.assertEqual(third["intent"], "ticket_creation")
+        self.assertIn("created successfully", third["final_response"])
+
+    def test_negative_follow_up_after_lookup_skips_existing_ticket_check(self) -> None:
+        first = self.graph.invoke({"user_input": "i am unable to install python", "context": {}})
+        second = self.graph.invoke({"user_input": "EMP1024", "context": first["context"]})
+
+        third = self.graph.invoke({"user_input": "no", "context": second["context"]})
+        self.assertEqual(third["intent"], "ticket_creation")
+        self.assertIn("created successfully", third["final_response"])
 
     def test_greeting_returns_friendly_capabilities(self) -> None:
         result = self.graph.invoke({"user_input": "hello", "context": {}})

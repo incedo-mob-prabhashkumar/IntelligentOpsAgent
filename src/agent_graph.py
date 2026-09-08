@@ -41,6 +41,15 @@ def _looks_like_affirmation(text: str) -> bool:
     return normalized in {"yes", "yeah", "yep", "sure", "ok", "okay", "please do", "go ahead"}
 
 
+def _looks_like_create_confirmation(text: str) -> bool:
+    lowered = text.lower()
+    return bool(
+        re.search(r"\b(?:create|open|raise)\s+(?:a\s+)?(?:new\s+)?ticket\b", lowered)
+        or re.search(r"\b(?:yes|sure|okay|yep|go ahead|please do)\s+(?:create|open|raise)\b", lowered)
+        or "create new" in lowered
+    )
+
+
 def _looks_like_negative(text: str) -> bool:
     normalized = text.strip().lower()
     return normalized in {"no", "nope", "not now", "skip", "don't", "do not"}
@@ -58,7 +67,62 @@ def _looks_like_thanks(text: str) -> bool:
 
 def _looks_like_count_query(text: str) -> bool:
     lowered = text.lower()
-    return any(token in lowered for token in ["how many", "count", "number of", "total tickets", "tickets raised"])
+    return any(token in lowered for token in ["how many", "count", "number of", "total tickets"]) \
+        or re.search(r"\b(?:how many|count|number of)\s+(?:ticket|tickets|issues|issue)\b", lowered) is not None
+
+
+def _looks_like_issue_summary(text: str) -> bool:
+    lowered = text.lower()
+    return any(
+        token in lowered
+        for token in [
+            "hardware",
+            "software",
+            "network",
+            "vpn",
+            "wifi",
+            "printer",
+            "screen",
+            "laptop",
+            "mouse",
+            "keyboard",
+            "monitor",
+            "audio",
+            "video",
+            "camera",
+            "blurry",
+            "blur",
+            "battery",
+            "driver",
+            "issue",
+            "problem",
+            "not working",
+            "broken",
+            "offline",
+            "fail",
+            "disconnect",
+        ]
+    )
+
+
+def _infer_ticket_category(text: str) -> str:
+    lowered = text.lower()
+    if any(token in lowered for token in ["vpn", "wifi", "network", "internet", "connectivity", "router", "lan", "dns", "firewall", "latency", "offline"]):
+        return "network"
+    if any(token in lowered for token in ["hardware", "screen", "monitor", "keyboard", "mouse", "printer", "audio", "speaker", "camera", "video", "blurry", "blur", "battery", "charger", "display", "laptop", "desktop", "device"]):
+        return "hardware"
+    if any(token in lowered for token in ["software", "app", "outlook", "excel", "browser", "driver", "install", "update", "crash", "login", "password", "email", "office", "application", "server", "os"]):
+        return "software"
+    return "general"
+
+
+def _infer_ticket_priority(text: str) -> str:
+    lowered = text.lower()
+    if any(token in lowered for token in ["down", "blocked", "urgent", "critical", "cannot", "unable", "not working", "outage", "offline", "dead", "won't start"]):
+        return "high"
+    if any(token in lowered for token in ["slow", "intermittent", "flicker", "disconnects", "errors", "warning", "issue", "problem"]):
+        return "medium"
+    return "low"
 
 
 def _looks_like_update_request(text: str) -> bool:
@@ -109,7 +173,16 @@ def _looks_like_status_check(text: str) -> bool:
 
 def _looks_like_ticket_creation_request(text: str) -> bool:
     lowered = text.lower()
-    return any(token in lowered for token in ["raise", "create", "open", "log a ticket", "new ticket"])
+    return bool(re.search(r"\b(?:raise|create|open|log a ticket|new ticket)\b", lowered))
+
+
+def _looks_like_employee_ticket_lookup(text: str) -> bool:
+    lowered = text.lower()
+    if not _extract_employee_id(text):
+        return False
+    if _looks_like_ticket_creation_request(text):
+        return False
+    return any(token in lowered for token in ["ticket", "tickets", "issue", "issues", "raised", "opened", "status", "history"])
 
 
 def _looks_like_incident_report(text: str) -> bool:
@@ -160,13 +233,19 @@ def build_graph(
         context = dict(state.get("context", {}))
         semantic_intent = classify_intent(user_input, context)
         if context.get("awaiting_lookup_confirmation"):
-            if _looks_like_affirmation(user_input):
+            if _looks_like_create_confirmation(user_input):
+                intent = "ticket_creation"
+                context.pop("awaiting_lookup_confirmation", None)
+                context["pending_intent"] = "ticket_creation"
+                context["existing_tickets_checked"] = True
+            elif _looks_like_affirmation(user_input):
                 intent = "ticket_lookup"
                 context.pop("awaiting_lookup_confirmation", None)
             elif _looks_like_negative(user_input):
                 intent = "ticket_creation"
                 context["existing_tickets_checked"] = True
                 context.pop("awaiting_lookup_confirmation", None)
+                context["pending_intent"] = "ticket_creation"
             else:
                 # Treat additional issue details as continuation, not small talk.
                 refined_summary = _build_issue_summary(user_input)
@@ -192,6 +271,8 @@ def build_graph(
             intent = "ticket_update"
         elif _extract_ticket_id(user_input):
             intent = "ticket_lookup"
+        elif _extract_employee_id(user_input) and _looks_like_employee_ticket_lookup(user_input):
+            intent = "ticket_lookup"
         elif _looks_like_count_query(user_input):
             intent = "ticket_lookup"
         else:
@@ -214,6 +295,8 @@ def build_graph(
                     and not _looks_like_status_check(user_input)
                 ):
                     intent = "knowledge_search"
+                if intent == "small_talk" and _looks_like_issue_summary(user_input):
+                    intent = "ticket_creation"
                 if pending_intent and (_extract_employee_id(user_input) or _looks_like_affirmation(user_input)):
                     intent = pending_intent
                 elif pending_intent and len(user_input.strip()) >= 8:
@@ -230,6 +313,8 @@ def build_graph(
                 and not _looks_like_knowledge_request(user_input)
             ):
                 intent = "knowledge_search"
+            elif _looks_like_issue_summary(user_input):
+                intent = "ticket_creation"
             else:
                 intent = "small_talk"
         context["last_intent"] = intent
@@ -387,6 +472,8 @@ def build_graph(
 
         context = dict(context)
         context["proposed_issue_summary"] = issue_summary
+        context["detected_category"] = _infer_ticket_category(issue_summary)
+        context["detected_priority"] = _infer_ticket_priority(issue_summary)
         context.pop("pending_intent", None)
         return {"create_ready": True, "context": context, "proposed_issue_summary": issue_summary}
 
@@ -394,12 +481,14 @@ def build_graph(
         context = state.get("context", {})
         employee_id = context.get("employee_id", "")
         issue_summary = state.get("proposed_issue_summary") or context.get("proposed_issue_summary", "")
+        category = context.get("detected_category") or _infer_ticket_category(issue_summary)
+        priority = context.get("detected_priority") or _infer_ticket_priority(issue_summary)
 
         result = tools.create_ticket(
             employee_id=employee_id,
             issue_summary=issue_summary,
-            category="network" if "vpn" in issue_summary.lower() else "general",
-            priority="high" if any(w in issue_summary.lower() for w in ["down", "blocked", "urgent"]) else "medium",
+            category=category,
+            priority=priority,
         )
         if not result.get("created"):
             return {
