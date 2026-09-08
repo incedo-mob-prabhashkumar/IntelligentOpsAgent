@@ -267,6 +267,16 @@ class AgentGraphTests(unittest.TestCase):
         self.assertEqual(result["context"].get("pending_intent"), "ticket_creation")
         self.assertEqual(self.tools.created_tickets, [])
 
+    def test_issue_status_query_routes_to_ticket_lookup(self) -> None:
+        result = self.graph.invoke(
+            {
+                "user_input": "what is the status of bios failed issue",
+                "context": {"employee_id": "EMP1024"},
+            }
+        )
+        self.assertEqual(result["intent"], "ticket_lookup")
+        self.assertIn("TKT1001", result["final_response"])
+
     def test_ticket_creation_follow_up_uses_saved_issue_summary(self) -> None:
         first = self.graph.invoke({"user_input": "My email is broken. Please create a ticket.", "context": {}})
         second = self.graph.invoke({"user_input": "EMP1024", "context": first["context"]})
@@ -274,13 +284,24 @@ class AgentGraphTests(unittest.TestCase):
         self.assertIn("Would you like me to check existing tickets", second["final_response"])
 
         third = self.graph.invoke({"user_input": "Yes", "context": second["context"]})
-        self.assertEqual(third["intent"], "ticket_lookup")
-        self.assertIn("Would you like me to create a new ticket", third["final_response"])
-
-        fourth = self.graph.invoke({"user_input": "Yes", "context": third["context"]})
-        self.assertEqual(fourth["intent"], "ticket_creation")
-        self.assertIn("created successfully", fourth["final_response"])
+        self.assertEqual(third["intent"], "ticket_creation")
+        self.assertIn("created successfully", third["final_response"])
         self.assertEqual(self.tools.created_tickets[0]["employee_id"], "EMP1024")
+
+    def test_bios_ticket_creation_is_visible_after_lookup_confirmation(self) -> None:
+        first = self.graph.invoke({"user_input": "bios failed", "context": {}})
+        self.assertEqual(first["intent"], "ticket_creation")
+        self.assertIn("employee ID", first["final_response"])
+
+        second = self.graph.invoke({"user_input": "EMP1024", "context": first["context"]})
+        self.assertEqual(second["intent"], "ticket_creation")
+        self.assertIn("Would you like me to check existing tickets", second["final_response"])
+
+        third = self.graph.invoke({"user_input": "yes", "context": second["context"]})
+        self.assertEqual(third["intent"], "ticket_creation")
+        self.assertIn("created successfully", third["final_response"])
+        self.assertIn("bios failed", third["final_response"])
+        self.assertEqual(self.tools.created_tickets[-1]["employee_id"], "EMP1024")
 
     def test_ticket_update_changes_description(self) -> None:
         result = self.graph.invoke(
@@ -357,12 +378,8 @@ class AgentGraphTests(unittest.TestCase):
         self.assertIn("Would you like me to check existing tickets", second["final_response"])
 
         third = self.graph.invoke({"user_input": "Yes", "context": second["context"]})
-        self.assertEqual(third["intent"], "ticket_lookup")
-        self.assertIn("Would you like me to create a new ticket", third["final_response"])
-
-        fourth = self.graph.invoke({"user_input": "Yes", "context": third["context"]})
-        self.assertEqual(fourth["intent"], "ticket_creation")
-        self.assertIn("created successfully", fourth["final_response"])
+        self.assertEqual(third["intent"], "ticket_creation")
+        self.assertIn("created successfully", third["final_response"])
 
     def test_issue_text_during_lookup_confirmation_continues_creation(self) -> None:
         context = {

@@ -1,0 +1,866 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI IT Support Assistant - Architecture App</title>
+  <style>
+    :root {
+      --bg-1: #06151f;
+      --bg-2: #0d1f2d;
+      --bg-3: #122b3d;
+      --panel: rgba(10, 22, 32, 0.9);
+      --panel-strong: rgba(14, 31, 45, 0.96);
+      --panel-soft: rgba(17, 38, 53, 0.82);
+      --line: rgba(148, 163, 184, 0.25);
+      --text: #eaf6ff;
+      --muted: #b7cad9;
+      --cyan: #7dd3fc;
+      --teal: #5eead4;
+      --green: #86efac;
+      --blue: #93c5fd;
+      --amber: #fbbf24;
+      --rose: #fda4af;
+      --shadow: 0 18px 40px rgba(2, 6, 23, 0.52);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(125, 211, 252, 0.12), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(94, 234, 212, 0.10), transparent 30%),
+        linear-gradient(160deg, var(--bg-1) 0%, var(--bg-2) 38%, var(--bg-3) 100%);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    a { color: inherit; }
+
+    .shell {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    aside {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      background: rgba(7, 18, 27, 0.92);
+      border-right: 1px solid var(--line);
+      padding: 28px 18px;
+    }
+
+    .brand {
+      margin: 0 0 26px;
+      font-size: 1.0rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--cyan);
+    }
+
+    .nav {
+      display: grid;
+      gap: 10px;
+    }
+
+    .nav button {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--text);
+      border-radius: 12px;
+      padding: 11px 12px;
+      text-align: left;
+      font: inherit;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .nav button:hover,
+    .nav button.active {
+      background: rgba(125, 211, 252, 0.07);
+      color: var(--cyan);
+      border-color: rgba(125, 211, 252, 0.34);
+      transform: translateX(2px);
+    }
+
+    main {
+      padding: 28px;
+    }
+
+    .panel {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .panel.active { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero {
+      background: linear-gradient(135deg, rgba(125, 211, 252, 0.10), rgba(94, 234, 212, 0.08));
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(134, 239, 172, 0.10);
+      border: 1px solid rgba(134, 239, 172, 0.30);
+      color: var(--green);
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    h1, h2, h3 {
+      margin-top: 0;
+      color: var(--text);
+    }
+
+    h1 {
+      font-size: clamp(2.3rem, 4vw, 3.2rem);
+      margin: 16px 0 10px;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      color: var(--cyan);
+      margin-bottom: 12px;
+    }
+
+    h3 {
+      font-size: 1.1rem;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      max-width: 760px;
+      margin: 0;
+    }
+
+    .metrics {
+      margin-top: 22px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+    }
+
+    .metric {
+      background: rgba(13, 28, 39, 0.74);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .metric-label {
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: var(--teal);
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+
+    .card ul,
+    .card ol {
+      margin: 0;
+      padding-left: 20px;
+      color: var(--muted);
+    }
+
+    .card li {
+      margin: 6px 0;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(125, 211, 252, 0.3);
+      background: rgba(125, 211, 252, 0.06);
+      color: var(--cyan);
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 18px;
+    }
+
+    .diagram-box {
+      background: rgba(9, 25, 37, 0.9);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+      margin-top: 14px;
+    }
+
+    pre {
+      margin: 0;
+      color: #dff9ff;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.9rem;
+      line-height: 1.7;
+    }
+
+    .flow-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .step {
+      background: rgba(15, 31, 45, 0.96);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      min-height: 120px;
+    }
+
+    .step strong {
+      display: block;
+      color: var(--green);
+      margin-bottom: 8px;
+      font-size: 0.88rem;
+      letter-spacing: 0.06em;
+    }
+
+    .feature-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .feature-item {
+      background: rgba(15, 31, 45, 0.8);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+
+    .feature-item strong {
+      color: var(--teal);
+    }
+
+    .scenario-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 14px;
+    }
+
+    .scenario {
+      background: rgba(11, 26, 38, 0.93);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      min-height: 180px;
+    }
+
+    .scenario .tag {
+      display: inline-block;
+      margin-bottom: 8px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      background: rgba(125, 211, 252, 0.08);
+      border: 1px solid rgba(125, 211, 252, 0.24);
+      color: var(--cyan);
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .scenario h4 {
+      margin: 0 0 8px;
+      font-size: 1.05rem;
+      color: var(--text);
+    }
+
+    .scenario p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .callout {
+      padding: 14px 16px;
+      border-left: 4px solid var(--teal);
+      background: rgba(94, 234, 212, 0.05);
+      border-radius: 10px;
+      color: var(--text);
+      margin-top: 12px;
+    }
+
+    .soft-green { color: var(--green); }
+    .soft-amber { color: var(--amber); }
+
+    @media (max-width: 860px) {
+      .shell { grid-template-columns: 1fr; }
+      aside {
+        position: static;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--line);
+      }
+      main { padding: 20px 16px 36px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside>
+      <div class="brand">AI IT Support</div>
+      <div class="nav">
+        <button class="tab-button active" data-target="overview">Overview</button>
+        <button class="tab-button" data-target="architecture">Architecture</button>
+        <button class="tab-button" data-target="flow">Request Flow</button>
+        <button class="tab-button" data-target="cases">Covered Cases</button>
+        <button class="tab-button" data-target="security">Safety</button>
+      </div>
+    </aside>
+
+    <main>
+      <section id="overview" class="panel active">
+        <div class="hero">
+          <div class="status">● Architecture ready</div>
+          <h1>AI IT Support Assistant</h1>
+          <p class="subtitle">
+            A stateful support assistant for employee help requests, ticket actions, knowledge lookup,
+            and system-status checks. It combines a Streamlit UI, a decision-driven LangGraph workflow,
+            and grounded data access using PostgreSQL-backed tools and semantic retrieval.
+          </p>
+
+          <div class="metrics">
+            <div class="metric">
+              <div class="metric-label">UI</div>
+              <div class="metric-value">Streamlit</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Workflow</div>
+              <div class="metric-value">LangGraph</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Storage</div>
+              <div class="metric-value">PostgreSQL</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">AI Layer</div>
+              <div class="metric-value">LLM + embeddings</div>
+            </div>
+          </div>
+
+          <div class="pill-row">
+            <span class="pill">Intent Routing</span>
+            <span class="pill">Employee Lookup</span>
+            <span class="pill">Ticket Workflow</span>
+            <span class="pill">Knowledge Search</span>
+            <span class="pill">Stateful Context</span>
+          </div>
+        </div>
+
+        <div class="card-grid">
+          <article class="card">
+            <h3>Core responsibilities</h3>
+            <ul>
+              <li>Understand user intent from natural language.</li>
+              <li>Route requests to the correct local tool or validation branch.</li>
+              <li>Maintain state across multiple turns in a conversation.</li>
+              <li>Validate fields before ticket creation and update operations.</li>
+              <li>Return grounded user-friendly answers with structured output.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Primary data domains</h3>
+            <ul>
+              <li>employees</li>
+              <li>knowledge_base</li>
+              <li>tickets</li>
+              <li>system_status</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Typical user journeys</h3>
+            <ul>
+              <li>Check if the VPN is down.</li>
+              <li>Find the status of a support ticket.</li>
+              <li>Ask for help with employee access issues.</li>
+              <li>Open a new ticket after validation.</li>
+              <li>Update an existing ticket summary.</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section id="architecture" class="panel">
+        <div class="card">
+          <h2>Technical component map</h2>
+          <div class="two-col">
+            <div>
+              <h3>1. UI / interaction layer</h3>
+              <ul>
+                <li><code>app.py</code> initializes the Streamlit session state and renders chat + tool results.</li>
+                <li>Conversation history is stored in session memory and persisted across turns.</li>
+                <li>It also exposes trace-level routing and structured data output for debugging.</li>
+              </ul>
+            </div>
+            <div>
+              <h3>2. Business service layer</h3>
+              <ul>
+                <li><code>src/service.py</code> wraps the LangGraph workflow and manages the active request context.</li>
+                <li><code>ITSupportAgent.handle_message()</code> is the main entry point for user requests.</li>
+                <li>It normalizes inputs and returns both text and structured trace results.</li>
+              </ul>
+            </div>
+            <div>
+              <h3>3. Orchestration layer</h3>
+              <ul>
+                <li><code>src/agent_graph.py</code> defines the graph nodes and conditional transitions.</li>
+                <li>The graph detects intent, handles pending confirmation state, and validates writes.</li>
+                <li>It is responsible for routing to knowledge, employee, ticket, or status tools.</li>
+              </ul>
+            </div>
+            <div>
+              <h3>4. Retrieval and AI layer</h3>
+              <ul>
+                <li><code>src/llm_router.py</code> performs intent classification and response generation.</li>
+                <li><code>src/tools.py</code> executes queries and writes against the business data model.</li>
+                <li>Sentence embeddings support semantic matching while regex and rule-based logic serve as a fallback.</li>
+              </ul>
+            </div>
+            <div>
+              <h3>5. Data persistence layer</h3>
+              <ul>
+                <li><code>src/models.py</code> defines the SQLAlchemy ORM model schema.</li>
+                <li><code>src/database.py</code> handles schema initialization and application startup setup.</li>
+                <li><code>src/config.py</code> loads provider settings from environment variables.</li>
+              </ul>
+            </div>
+            <div>
+              <h3>6. State and workflow state</h3>
+              <ul>
+                <li><code>src/state.py</code> captures user input, intent, pending fields, and tool output.</li>
+                <li>State carries context across multi-turn confirmation and ticket-creation flows.</li>
+                <li>It is critical for safe continuation when the user supplies follow-up information.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:18px;">
+          <h2>Component interaction diagram</h2>
+          <div class="diagram-box">
+<pre>User
+  ↓
+Streamlit UI (app.py)
+  ↓
+ITSupportAgent.handle_message()
+  ↓
+LangGraph graph
+  ├─ capture_context
+  ├─ detect_intent
+  ├─ evaluate_requirements
+  ├─ validate_write_guardrails
+  ├─ execute_tool_node
+  └─ finalize_response
+        ↓
+      Tool layer
+      ├─ knowledge_search
+      ├─ employee_lookup
+      ├─ ticket_lookup
+      ├─ ticket_create
+      ├─ ticket_update
+      └─ system_status
+        ↓
+      PostgreSQL / knowledge store / embedding model
+        ↓
+  Structured response + tabular output rendered in UI</pre>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:18px;">
+          <h2>Mermaid: system architecture</h2>
+          <div class="diagram-box">
+<pre>flowchart LR
+    U[User] --> UI[Streamlit UI\napp.py]
+    UI --> SA[ITSupportAgent\nservice.py]
+    SA --> G[LangGraph Workflow\nagent_graph.py]
+
+    G --> C[Context Capture]
+    C --> I[Intent Detection]
+    I --> V[Validation Layer]
+    V --> T[Tool Layer\nknowledge / ticket / employee / status]
+
+    T --> P[(PostgreSQL)]
+    T --> K[(Knowledge Base)]
+    I --> E[SentenceTransformer\nsemantic matching]
+    E --> R[Grounded Response]
+    R --> UI
+</pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="flow" class="panel">
+        <div class="card">
+          <h2>Request execution pipeline</h2>
+          <div class="flow-grid">
+            <div class="step"><strong>1. Receive input</strong>User message enters the chat completion loop. Session context from the previous turn is available.</div>
+            <div class="step"><strong>2. Normalize state</strong>The current graph state is updated with user input, pending fields, and prior local memory.</div>
+            <div class="step"><strong>3. Route intent</strong>Deterministic checks run first, then the semantic classifier is used to choose the best intent.</div>
+            <div class="step"><strong>4. Validate safety</strong>Write paths require employee validation, ticket existence, duplication checks, and required field checks.</div>
+            <div class="step"><strong>5. Execute tool</strong>Appropriate tool reads or updates the business database and returns structured payloads.</div>
+            <div class="step"><strong>6. Return result</strong>Response generation combines the tool output with user-friendly language and renders the table.</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:18px;">
+          <h2>Decision flow pseudocode</h2>
+          <div class="diagram-box">
+<pre>def handle_message(user_message, context):
+    state = merge_context(context, user_message)
+    route = detect_intent(state)
+
+    if route == "ticket_creation":
+        if not employee_id_present(state):
+            return ask_for_employee_id()
+        if duplicate_ticket_exists(state):
+            return reject_duplicate_ticket()
+        if not required_fields_present(state):
+            return ask_for_missing_fields()
+        return create_ticket(state)
+
+    if route == "ticket_update":
+        if not ticket_id_present(state):
+            return ask_for_ticket_id()
+        return update_ticket(state)
+
+    if route == "knowledge_search":
+        return search_knowledge(state)
+
+    if route == "system_status":
+        return get_system_status(state)
+
+    return generate_small_talk_response(state)</pre>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:18px;">
+          <h2>Mermaid: request execution sequence</h2>
+          <div class="diagram-box">
+<pre>sequenceDiagram
+    participant User
+    participant UI as Streamlit UI
+    participant Agent as ITSupportAgent
+    participant Graph as LangGraph Workflow
+    participant Tool as Tool Layer
+    participant DB as PostgreSQL
+    participant KB as Knowledge Base
+
+    User->>UI: Enter issue description
+    UI->>Agent: handle_message(message, context)
+    Agent->>Graph: invoke workflow state
+    Graph->>Graph: capture context + detect intent
+    alt knowledge query
+        Graph->>Tool: search_knowledge()
+        Tool->>KB: read candidate articles
+        KB-->>Tool: ranked matches
+    else ticket action
+        Graph->>Tool: validate employee / duplicate / required fields
+        Tool->>DB: read employee + ticket data
+        DB-->>Tool: validation payload
+        Tool-->>Graph: allow / reject write
+    else system status
+        Graph->>Tool: get_system_status()
+        Tool->>DB: read service status
+        DB-->>Tool: status rows
+    end
+    Graph-->>Agent: final response + structured trace
+    Agent-->>UI: text + table output
+    UI-->>User: response</pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="cases" class="panel">
+        <div class="card">
+          <h2>Business scenarios covered</h2>
+          <div class="scenario-grid">
+            <article class="scenario">
+              <div class="tag">Knowledge</div>
+              <h4>VPN password reset</h4>
+              <p>Query is routed to the knowledge tool and matched semantically with article embeddings + lexical fallback to resolve paraphrased descriptions.</p>
+            </article>
+
+            <article class="scenario">
+              <div class="tag">Employee</div>
+              <h4>Employee lookup</h4>
+              <p>Employee ID or partial profile text triggers a lookup against the employees table. Data is returned in a normalized row structure.</p>
+            </article>
+
+            <article class="scenario">
+              <div class="tag">Ticket lookup</div>
+              <h4>Status check</h4>
+              <p>Natural language query uses context to resolve employee_id or ticket_id and return matching ticket records with state details.</p>
+            </article>
+
+            <article class="scenario">
+              <div class="tag">Ticket create</div>
+              <h4>New issue creation</h4>
+              <p>Creates a new ticket only after employee validation, duplicate detection, and field-completeness checks pass.</p>
+            </article>
+
+            <article class="scenario">
+              <div class="tag">Duplicate prevention</div>
+              <h4>Repeated symptoms</h4>
+              <p>Open tickets are compared by similarity to prevent duplicate creation and maintain clean ticket hygiene.</p>
+            </article>
+
+            <article class="scenario">
+              <div class="tag">System status</div>
+              <h4>Infrastructure health</h4>
+              <p>Status lookup reads the system_status table and returns current service state, timestamps, and service-level notes.</p>
+            </article>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:18px;">
+          <h2>Representative request patterns</h2>
+          <div class="feature-list">
+            <div class="feature-item"><strong>1.</strong> “My VPN is not working. Please raise a ticket.” → stateful ticket creation flow with employee validation and issue summary capture.</div>
+            <div class="feature-item"><strong>2.</strong> “What is the status of my laptop issue? EMP1024” → employee context resolves the related ticket set for lookup.</div>
+            <div class="feature-item"><strong>3.</strong> “I need help resetting my VPN password” → semantic match against knowledge_base with lexical fallback.</div>
+            <div class="feature-item"><strong>4.</strong> “Update TKT1001 summary…” → existing ticket validation before update, followed by write confirmation.</div>
+            <div class="feature-item"><strong>5.</strong> “Check the system health” → direct retrieval from system_status and summary presentation.</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="security" class="panel">
+        <div class="card-grid">
+          <article class="card">
+            <h3>Safety and validation</h3>
+            <ul>
+              <li>All write operations run through validation guardrails.</li>
+              <li>Employee existence and ticket existence must be confirmed before mutation.</li>
+              <li>Duplicate ticket logic reduces repeated support requests and noisy state.</li>
+              <li>Response text is grounded in actual tool output, preventing fabricated ticket facts.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Failure handling</h3>
+            <ul>
+              <li>Database startup failures surface warnings without crashing the chat session.</li>
+              <li>Semantic retrieval failures degrade to lexical matching rather than total failure.</li>
+              <li>LLM generation issues fall back to deterministic response handling.</li>
+              <li>Ambiguous confirmation-state prompts request clarification instead of mutating records.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Operational quality</h3>
+            <ul>
+              <li>Coverage includes routing, schema validation, and critical business scenarios.</li>
+              <li>The architecture is designed to support future RBAC and migration patterns.</li>
+              <li>It is extensible for ticket lifecycle operations such as close, reopen, assign, and escalate.</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="card" style="margin-top:18px;">
+          <h2>Detailed data and routing model</h2>
+          <div class="diagram-box">
+<pre>employees
+  employee_id (PK)
+  name
+  department
+  email
+
+tickets
+  ticket_id (PK)
+  employee_id (FK -> employees.employee_id)
+  issue_summary
+  category
+  priority
+  status
+  created_at
+  updated_at
+
+knowledge_base
+  article_id (PK)
+  title
+  category
+  content
+  tags
+
+system_status
+  service_name
+  status
+  last_checked
+  notes
+
+Intent routing priority
+  1. Exact rule detection (employee_id, ticket_id, pending confirmation state)
+  2. Semantic intent classification (SentenceTransformer similarity)
+  3. Heuristic matching / keyword fallback
+  4. Small-talk / unsupported response</pre>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:18px;">
+          <h2>Mermaid: data relationship model</h2>
+          <div class="diagram-box">
+<pre>erDiagram
+    EMPLOYEES ||--o{ TICKETS : has
+    EMPLOYEES {
+        string employee_id PK
+        string name
+        string department
+        string email
+    }
+
+    TICKETS {
+        string ticket_id PK
+        string employee_id FK
+        string issue_summary
+        string category
+        string priority
+        string status
+        datetime created_at
+        datetime updated_at
+    }
+
+    KNOWLEDGE_BASE {
+        string article_id PK
+        string title
+        string category
+        string content
+        string[] tags
+    }
+
+    SYSTEM_STATUS {
+        string service_name PK
+        string status
+        datetime last_checked
+        string notes
+    }</pre>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:18px;">
+          <h2>Why SentenceTransformer is primary</h2>
+          <div class="feature-list">
+            <div class="feature-item">
+              <strong>Semantic intent matching</strong><br>
+              Natural-language requests are not usually expressed as exact tokens. SentenceTransformers map text to a shared embedding space and can measure similarity between paraphrased user queries and stored knowledge entries or expected intent clusters.
+            </div>
+            <div class="feature-item">
+              <strong>Problem-specific relevance</strong><br>
+              Queries like “remote access keeps dropping” and “VPN disconnect” are semantically equivalent in an IT support context even when they do not share the same keywords. Semantic matching improves relevance without hardcoding every phrase.
+            </div>
+            <div class="feature-item">
+              <strong>Grounded ranking</strong><br>
+              In this architecture, semantic retrieval is used to rank the most relevant knowledge items before returning them. This improves recall while retaining an explicit fallback chain.
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:18px;">
+          <h2>Why heuristic search is secondary</h2>
+          <div class="feature-list">
+            <div class="feature-item">
+              <strong>Determinism</strong><br>
+              Heuristic logic is explicit and deterministic. It is well suited for exact identifiers, required fields, and confirmation states where predictable branch selection is critical.
+            </div>
+            <div class="feature-item">
+              <strong>Safety checks</strong><br>
+              High-risk operations such as ticket creation or update must not rely solely on a high-level similarity score. The heuristic layer ensures the application can validate known IDs and required data with predictable outcomes.
+            </div>
+            <div class="feature-item">
+              <strong>Fallback reliability</strong><br>
+              If semantic scoring is weak, absent, or unavailable, the rule-based layer ensures the assistant still handles known patterns correctly rather than failing silently.
+            </div>
+          </div>
+          <div class="callout" style="margin-top:16px;">
+            Practical design decision: <strong>SentenceTransformer</strong> is the primary understanding layer because it handles semantic variation, while <strong>heuristics</strong> remain the authoritative fallback for exact-data tasks and safety-sensitive actions.
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:18px;">
+          <h2>Design principles</h2>
+          <div class="callout">
+            The system prioritizes <span class="soft-green">grounded data access</span>, <span class="soft-amber">validated writes</span>, and <span class="soft-green">stateful conversation continuity</span> so that the assistant behaves as a reliable internal operations tool rather than a general-purpose chatbot.
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const buttons = document.querySelectorAll('.tab-button');
+    const panels = document.querySelectorAll('.panel');
+
+    buttons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const target = button.dataset.target;
+
+        buttons.forEach((b) => b.classList.toggle('active', b === button));
+        panels.forEach((panel) => panel.classList.toggle('active', panel.id === target));
+      });
+    });
+  </script>
+</body>
+</html>

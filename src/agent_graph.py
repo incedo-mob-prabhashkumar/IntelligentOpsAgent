@@ -171,6 +171,17 @@ def _looks_like_status_check(text: str) -> bool:
     )
 
 
+def _looks_like_ticket_status_query(text: str) -> bool:
+    lowered = text.lower()
+    if any(token in lowered for token in ["system status", "service status", "status page", "outage", "health", "operational"]):
+        return False
+    issue_words = ["issue", "problem", "ticket", "bios", "vpn", "wifi", "printer", "laptop", "screen", "server", "access"]
+    return (
+        any(token in lowered for token in ["status of", "status for", "what is the status", "issue status", "problem status"])
+        and any(token in lowered for token in issue_words)
+    )
+
+
 def _looks_like_ticket_creation_request(text: str) -> bool:
     lowered = text.lower()
     return bool(re.search(r"\b(?:raise|create|open|log a ticket|new ticket)\b", lowered))
@@ -239,8 +250,17 @@ def build_graph(
                 context["pending_intent"] = "ticket_creation"
                 context["existing_tickets_checked"] = True
             elif _looks_like_affirmation(user_input):
-                intent = "ticket_lookup"
                 context.pop("awaiting_lookup_confirmation", None)
+                if context.get("employee_id") and (
+                    context.get("proposed_issue_summary")
+                    or len(_build_issue_summary(user_input)) >= 8
+                    or len(_build_issue_summary(context.get("last_user_message", ""))) >= 8
+                ):
+                    intent = "ticket_creation"
+                    context["pending_intent"] = "ticket_creation"
+                    context["existing_tickets_checked"] = True
+                else:
+                    intent = "ticket_lookup"
             elif _looks_like_negative(user_input):
                 intent = "ticket_creation"
                 context["existing_tickets_checked"] = True
@@ -275,6 +295,11 @@ def build_graph(
             intent = "ticket_lookup"
         elif _looks_like_count_query(user_input):
             intent = "ticket_lookup"
+        elif _looks_like_status_check(user_input):
+            if _looks_like_ticket_status_query(user_input):
+                intent = "ticket_lookup"
+            else:
+                intent = "system_status"
         else:
             pending_intent = context.get("pending_intent")
             if semantic_intent:

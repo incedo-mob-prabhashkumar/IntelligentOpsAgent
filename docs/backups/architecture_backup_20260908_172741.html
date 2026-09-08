@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI IT Support Assistant Architecture</title>
+  <style>
+    :root {
+      --bg: #f3f7fb;
+      --surface: #ffffff;
+      --surface-strong: #f8fbff;
+      --text: #1a2433;
+      --muted: #52657a;
+      --accent: #0f766e;
+      --accent-2: #0b3b63;
+      --accent-3: #1d4ed8;
+      --border: #d9e4ef;
+      --shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+      --success: #166534;
+      --warning: #a16207;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(180deg, #edf5ff 0%, #f7f9fc 100%);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(255, 255, 255, 0.9);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(10px);
+    }
+
+    .header-inner {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 24px 20px 18px;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(15, 118, 110, 0.08);
+      color: var(--accent);
+      border: 1px solid rgba(15, 118, 110, 0.18);
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 3vw, 2.8rem);
+      color: var(--accent-2);
+    }
+
+    .subhead {
+      margin: 10px 0 0;
+      color: var(--muted);
+      max-width: 780px;
+      font-size: 1.02rem;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(29, 78, 216, 0.06);
+      border: 1px solid rgba(29, 78, 216, 0.16);
+      color: var(--accent-3);
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px 20px 52px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 18px;
+    }
+
+    h2 {
+      margin: 0 0 12px;
+      color: var(--accent-2);
+      font-size: 1.35rem;
+    }
+
+    h3 {
+      margin: 18px 0 8px;
+      color: var(--accent);
+      font-size: 1.05rem;
+    }
+
+    p, li { color: var(--text); }
+
+    ul, ol {
+      margin: 8px 0 0 22px;
+      padding: 0;
+    }
+
+    li { margin: 6px 0; }
+
+    .muted { color: var(--muted); }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 18px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .stat {
+      background: var(--surface-strong);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    code, pre {
+      font-family: Consolas, "Courier New", monospace;
+    }
+
+    code {
+      background: #eef3f8;
+      border: 1px solid #d9e1ea;
+      border-radius: 4px;
+      padding: 1px 5px;
+      color: var(--text);
+    }
+
+    pre {
+      margin: 14px 0 0;
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 12px;
+      padding: 14px;
+      overflow: auto;
+    }
+
+    .diagram {
+      margin-top: 12px;
+      background: var(--surface-strong);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+    }
+
+    .callout {
+      padding: 14px 16px;
+      border-left: 4px solid var(--accent);
+      background: rgba(15, 118, 110, 0.04);
+      border-radius: 10px;
+      color: var(--text);
+    }
+
+    .success {
+      color: var(--success);
+      font-weight: 700;
+    }
+
+    .warning {
+      color: var(--warning);
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="eyebrow">Architecture overview</div>
+      <h1>AI IT Support Assistant</h1>
+      <p class="subhead">
+        A stateful support assistant for employee help requests, ticket operations, knowledge lookup,
+        and system-status checks. It combines a Streamlit chat frontend, a LangGraph orchestration layer,
+        and local or remote model routing with grounded business tools.
+      </p>
+      <div class="pill-row">
+        <span class="pill">LangGraph</span>
+        <span class="pill">Streamlit</span>
+        <span class="pill">PostgreSQL</span>
+        <span class="pill">Ollama</span>
+        <span class="pill">SentenceTransformer</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="card hero-grid">
+      <div>
+        <h2>System overview</h2>
+        <p>The application is designed to understand IT support requests in natural language and safely route them to the right action. It supports knowledge lookup, employee lookup, ticket lookup, ticket creation, ticket update, and system-status checks.</p>
+        <p class="callout">This architecture keeps the assistant grounded in local business data, validates write actions before execution, and retains conversation state across turns.</p>
+      </div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">UI</div>
+          <div class="stat-value">Streamlit</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Workflow</div>
+          <div class="stat-value">LangGraph</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Data layer</div>
+          <div class="stat-value">PostgreSQL</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Model layer</div>
+          <div class="stat-value">LLM + embeddings</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Runtime components</h2>
+      <div class="two-col">
+        <div>
+          <ul>
+            <li><strong>UI Layer:</strong> Streamlit app in <code>app.py</code></li>
+            <li><strong>Service Layer:</strong> <code>ITSupportAgent</code> in <code>src/service.py</code></li>
+            <li><strong>Orchestration Layer:</strong> LangGraph workflow in <code>src/agent_graph.py</code></li>
+            <li><strong>Intent + Response Layer:</strong> <code>src/llm_router.py</code></li>
+          </ul>
+        </div>
+        <div>
+          <ul>
+            <li><strong>Tool Layer:</strong> <code>src/tools.py</code> for knowledge, employees, tickets, and status</li>
+            <li><strong>Persistence Layer:</strong> PostgreSQL via <code>src/models.py</code> and <code>src/database.py</code></li>
+            <li><strong>Config Layer:</strong> environment-based settings in <code>src/config.py</code></li>
+            <li><strong>State Layer:</strong> conversation memory and pending actions in <code>src/state.py</code></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Data model</h2>
+      <div class="two-col">
+        <div>
+          <ul>
+            <li>employees</li>
+            <li>knowledge_base</li>
+            <li>tickets</li>
+            <li>system_status</li>
+          </ul>
+        </div>
+        <div>
+          <p class="muted">The app loads baseline records from the local data files and initializes the database schema through the startup database configuration flow.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>End-to-end request flow</h2>
+      <ol>
+        <li>User submits a message in the Streamlit chat.</li>
+        <li><code>app.py</code> passes the request and context to the agent service.</li>
+        <li><code>ITSupportAgent.handle_message</code> invokes the LangGraph workflow.</li>
+        <li>Context capture and intent detection route the message to the correct tool or response branch.</li>
+        <li>Validation checks are run before ticket writes or updates.</li>
+        <li>Structured tool result data is returned to the UI for display.</li>
+      </ol>
+
+      <div class="diagram">
+        <pre>user message
+  ↓
+Streamlit UI (app.py)
+  ↓
+ITSupportAgent
+  ↓
+LangGraph workflow
+  ├─ intent detection
+  ├─ validation
+  ├─ tool execution
+  └─ grounded response generation
+  ↓
+PostgreSQL / local data / knowledge base
+  ↓
+Assistant text + structured table output</pre>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Architectural flow diagram</h2>
+      <div class="diagram">
+<pre>flowchart TD
+    U[User Message in Streamlit] --> A[app.py]
+    A --> S[ITSupportAgent.handle_message]
+    S --> G[LangGraph Workflow]
+
+    G --> C[Context Capture]
+    C --> D[Intent Decision]
+
+    D -->|knowledge_search| K[Knowledge Tool]
+    D -->|employee_lookup| E[Employee Tool]
+    D -->|ticket_lookup| T1[Ticket Lookup Validation]
+    D -->|ticket_creation| T2[Ticket Creation Validation]
+    D -->|ticket_update| T3[Ticket Update Validation]
+    D -->|system_status| SS[System Status Tool]
+    D -->|small_talk| R[Response Node]
+
+    K --> DB1[(knowledge_base)]
+    E --> DB2[(employees)]
+    T1 --> DB3[(tickets)]
+    T2 --> DB3
+    T3 --> DB3
+    SS --> DB4[(system_status)]
+
+    DB1 --> R
+    DB2 --> R
+    DB3 --> R
+    DB4 --> R
+    R --> L[Grounded Response Generator]
+    L --> A2[Assistant Text + Table Output]</pre>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Routing and intent strategy</h2>
+      <div class="two-col">
+        <div>
+          <p>The assistant uses a hybrid strategy:</p>
+          <ul>
+            <li>Deterministic checks for critical cases such as ticket IDs, confirmation states, and update rules.</li>
+            <li>Semantic intent classification to support natural-language requests.</li>
+            <li>Safe fallback behavior when meaning is unclear.</li>
+          </ul>
+        </div>
+        <div>
+          <p>Current routed intents include:</p>
+          <ul>
+            <li>knowledge_search</li>
+            <li>employee_lookup</li>
+            <li>ticket_lookup</li>
+            <li>ticket_creation</li>
+            <li>ticket_update</li>
+            <li>system_status</li>
+            <li>small_talk</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Safety and validation controls</h2>
+      <ul>
+        <li>Missing required fields are checked before ticket creation or updates.</li>
+        <li>Employee record existence is validated before attempts to create tickets for that employee.</li>
+        <li>Duplicate-check logic reduces repeat ticket creation using recent open-ticket similarity.</li>
+        <li>Ticket updates require a valid existing ticket ID.</li>
+        <li>Data access remains grounded and guarded against invented facts.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>SentenceTransformer and model behavior</h2>
+      <p>The semantic retrieval path converts the user query and knowledge article text to embeddings, then ranks them by similarity. This helps the assistant understand paraphrased user language and improves relevance versus strict keyword matching.</p>
+      <p>When semantic retrieval is unavailable or low confidence, the app falls back to lexical matching to keep the experience reliable.</p>
+    </section>
+
+    <section class="card">
+      <h2>Testing and extension points</h2>
+      <div class="two-col">
+        <div>
+          <p class="success">Validated areas</p>
+          <ul>
+            <li>Intent routing and multi-turn state continuity</li>
+            <li>Ticket creation and update flows</li>
+            <li>Duplicate prevention and safety checks</li>
+            <li>Database schema expectations</li>
+          </ul>
+        </div>
+        <div>
+          <p class="warning">Future improvements</p>
+          <ul>
+            <li>Role-based access controls</li>
+            <li>Migration management for schema evolution</li>
+            <li>Additional lifecycle actions like close/reopen/assign</li>
+            <li>Deeper confidence scoring and observability</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
+
+      <h3>15.2) Conversation and Validation State Diagram</h3>
+      <div class="diagram mermaid">
+stateDiagram-v2
+	[*] --> AwaitingUserMessage
+	AwaitingUserMessage --> CaptureContext: message received
+	CaptureContext --> DecideIntent
+
+	DecideIntent --> KnowledgeSearch: knowledge_search
+	DecideIntent --> EmployeeLookup: employee_lookup
+	DecideIntent --> TicketLookupValidation: ticket_lookup
+	DecideIntent --> TicketCreationValidation: ticket_creation
+	DecideIntent --> TicketUpdateValidation: ticket_update
+	DecideIntent --> SystemStatus: system_status
+	DecideIntent --> SmallTalk: small_talk
+
+	KnowledgeSearch --> ComposeResponse
+	EmployeeLookup --> ComposeResponse
+	SystemStatus --> ComposeResponse
+	SmallTalk --> ComposeResponse
+
+	TicketLookupValidation --> ComposeResponse: missing fields
+	TicketLookupValidation --> TicketLookup: valid
+	TicketLookup --> ComposeResponse
+
+	TicketCreationValidation --> ComposeResponse: missing fields or duplicate
+	TicketCreationValidation --> TicketCreation: valid
+	TicketCreation --> ComposeResponse
+
+	TicketUpdateValidation --> ComposeResponse: invalid ticket
+	TicketUpdateValidation --> TicketUpdate: valid
+	TicketUpdate --> ComposeResponse
+
+	ComposeResponse --> AwaitingUserMessage
+      </div>
+
+      <h3>15.3) Data Model Relationship Diagram</h3>
+      <div class="diagram mermaid">
+erDiagram
+	EMPLOYEES ||--o{ TICKETS : owns
+
+	EMPLOYEES {
+		string employee_id PK
+		string name
+		string department
+		string email
+		string location
+	}
+
+	TICKETS {
+		string ticket_id PK
+		string employee_id FK
+		string summary
+		string category
+		string priority
+		string status
+		datetime created_at
+		datetime updated_at
+		string[] notes
+	}
+
+	KNOWLEDGE_BASE {
+		string article_id PK
+		string title
+		string[] tags
+		string content
+		date last_updated
+	}
+
+	SYSTEM_STATUS {
+		string service PK
+		string status
+		datetime updated_at
+	}
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>16) How The Application Works (Updated)</h2>
+      <p>This section summarizes the current runtime behavior with the latest routing and safety controls.</p>
+
+      <h3>16.1) High-Level Runtime Pipeline</h3>
+      <div class="diagram mermaid">
+flowchart TD
+	U[User Message] --> UI[Streamlit UI app.py]
+	UI --> SV[ITSupportAgent service.py]
+	SV --> GR[LangGraph Workflow]
+
+	GR --> CC[capture_context]
+	CC --> DI[decide_intent]
+
+	DI --> KS[knowledge_search]
+	DI --> EL[employee_lookup]
+	DI --> SS[system_status]
+	DI --> TLV[ticket_lookup_validate]
+	DI --> TCV[ticket_create_validate]
+	DI --> TUV[ticket_update_validate]
+	DI --> ST[small_talk]
+
+	TLV --> TL[ticket_lookup]
+	TCV --> TC[ticket_create]
+	TUV --> TU[ticket_update]
+
+	KS --> CR[compose_response]
+	EL --> CR
+	SS --> CR
+	ST --> CR
+	TL --> CR
+	TC --> CR
+	TU --> CR
+
+	CR --> OUT[Assistant Response plus Tabular Tool Output]
+      </div>
+
+      <h3>16.2) Intent Decision Priority</h3>
+      <div class="diagram mermaid">
+flowchart TD
+	A[Input plus Context] --> B{Pending confirmation state?}
+	B -->|Yes| C[Use deterministic confirmation route]
+	B -->|No| D{Strict ID patterns EMP or TKT?}
+	D -->|Yes| E[Use deterministic ticket or employee route]
+	D -->|No| F[SentenceTransformer semantic intent]
+	F --> G{Semantic intent available?}
+	G -->|Yes| H[Apply semantic intent]
+	G -->|No| I[LLM tool selector intent]
+	I --> J{LLM intent available?}
+	J -->|Yes| K[Apply LLM intent]
+	J -->|No| L[Fallback if or else rules]
+
+	H --> M{Safety policy override needed?}
+	K --> M
+	L --> N[Final intent]
+	M -->|Incident without explicit create| O[Route to knowledge_search]
+	M -->|No override| N
+	O --> N
+      </div>
+
+      <h3>16.3) Ticket Creation Safety Path</h3>
+      <div class="diagram mermaid">
+flowchart TD
+	R[User asks for ticket support] --> V1{employee_id present?}
+	V1 -->|No| P1[Ask for employee ID and store pending_intent]
+	V1 -->|Yes| V2{issue summary valid?}
+	V2 -->|No| P2[Ask for issue summary and store proposed_issue_summary]
+	V2 -->|Yes| V3{employee exists?}
+	V3 -->|No| P3[Return employee not found]
+	V3 -->|Yes| V4{Check existing tickets first?}
+	V4 -->|Yes| P4[Ask confirmation and switch to lookup]
+	V4 -->|No| V5{Duplicate open ticket found?}
+	V5 -->|Yes| P5[Block creation and explain duplicate]
+	V5 -->|No| W[Create ticket]
+	W --> S[Return created ticket ID and status]
+      </div>
+
+      <h3>16.4) Data Layer and Tool Mapping</h3>
+      <div class="diagram mermaid">
+flowchart LR
+	subgraph Tools
+		T1[knowledge_search]
+		T2[employee_lookup]
+		T3[ticket_lookup]
+		T4[ticket_create]
+		T5[ticket_update]
+		T6[system_status]
+	end
+
+	subgraph Database
+		D1[(knowledge_base)]
+		D2[(employees)]
+		D3[(tickets)]
+		D4[(system_status)]
+	end
+
+	T1 --> D1
+	T2 --> D2
+	T3 --> D3
+	T4 --> D3
+	T5 --> D3
+	T6 --> D4
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({ startOnLoad: true, theme: "default", securityLevel: "loose" });
+  </script>
+</body>
+</html>
